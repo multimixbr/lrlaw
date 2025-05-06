@@ -38,24 +38,35 @@ class NDIControllers extends BaseController
         $this->anexosModel = new AnexosModels();
     }
 
-    private function loadDashboardView($viewName, $data = [])
-    {
-        // Carrega a dashboard como parte do layout e a view passada no parâmetro $viewName
-        return view('dashboard/dashboard') . view($viewName, $data);
-    }
-
-    // Método index padrão
-    public function index(): string
-    {
-        $dados['pessoas'] = $this->pessoasModel->getAllPessoas();
-        // Corrigindo o nome da função e carregando a view correta
-        return $this->loadDashboardView('juridico/ndi', $dados);
-    }
-
-    protected function prepareVisualizarNDI($ndis = [])
+    public function index()
     {
         $session = session()->get();
-    
+
+        $filtros = [
+            'id_ndi'         => $this->request->getGet('id_ndi') ?? '',
+            'assunto'        => $this->request->getGet('assunto') ?? '',
+            'processo'       => $this->request->getGet('processo') ?? '',
+            'id_cliente'     => $this->request->getGet('id_cliente') ?? '',
+            'id_responsavel' => $this->request->getGet('id_responsavel') ?? '',
+            'prioridade'     => $this->request->getGet('prioridade') ?? '',
+            'dt_abertura'    => $this->request->getGet('dt_abertura') ?? '',
+            'id_fase'        => $this->request->getGet('id_fase') ?? '',
+            'id_status'      => $this->request->getGet('id_status') ?? '',
+            'id_servico'     => $this->request->getGet('id_servico') ?? '',
+            'situacao'       => $this->request->getGet('situacao') ?? '',
+        ];
+
+        $ndiModel = new NDIModels();
+
+        $ndis = array_filter($filtros) ? $ndiModel->getNDIsFiltro($filtros) : $ndiModel->getVisualizarNDI($session['id_usuario']);
+
+        $situacao = [
+            'A' => 'Aberto',
+            'C' => 'Cancelado',
+            'F' => 'Finalizado',
+            'R' => 'Recusado',
+        ];
+
         $dados = [
             'session'      => $session,
             'ndis'         => $ndis,
@@ -64,68 +75,14 @@ class NDIControllers extends BaseController
             'servicos'     => $this->servicosModels->getAllServicos(),
             'fases'        => $this->faseModel->getFaseAtivo(),
             'status'       => $this->statusModel->getStatusAtivo(),
-        ];
-    
-        return $dados;
-    }
-
-    public function filtrar()
-    {
-        // Captura os filtros da requisição GET
-        $filtros = [
-            'id_ndi'         => $this->request->getGet('id_ndi'),
-            'assunto'        => $this->request->getGet('assunto'),
-            'processo'       => $this->request->getGet('processo'),
-            'id_cliente'     => $this->request->getGet('id_cliente'),
-            'id_responsavel' => $this->request->getGet('id_responsavel'),
-            'prioridade'     => $this->request->getGet('prioridade'),
-            'dt_abertura'    => $this->request->getGet('dt_abertura'),
-            'id_fase'        => $this->request->getGet('id_fase'),
-            'id_status'      => $this->request->getGet('id_status'),
-            'id_servico'     => $this->request->getGet('id_servico'),
-        ];
-    
-        // Instância da model
-        $ndiModel = new NDIModels();
-    
-        // Obtém os NDIs filtrados
-        $ndis = $ndiModel->getNDIsFiltro($filtros);
-    
-        // Prepara os dados para a view
-        $dados = $this->prepareVisualizarNDI($ndis);
-        $dados['filtros'] = $filtros; // Passa os filtros para a view
-    
-        // Passa os dados para a view
-        return $this->loadDashboardView('juridico/visualizarNDI', $dados);
-    }
-    
-    public function visualizarNDI()
-    {
-        $filtros = [
-            'id_ndi'         => '',
-            'assunto'        => '',
-            'processo'       => '',
-            'id_cliente'     => '',
-            'id_responsavel' => '',
-            'prioridade'     => '',
-            'dt_abertura'    => '',
-            'id_fase'        => '',
-            'id_status'      => '',
-            'id_servico'     => ''
+            'situacao'     => $situacao,
+            'filtros'      => $filtros, 
         ];
 
-        // Obtém os NDIs ativos ou filtrados
-        $ndis = !empty($filtros) ? $this->ndiModels->getNDIsFiltro($filtros) : $this->ndiModels->getVisualizarNDI();
-    
-        // Prepara os dados para a view
-        $dados = $this->prepareVisualizarNDI($ndis);
-        $dados['filtros'] = $filtros; // Passa os filtros para a view
-    
-        // Passa os dados para a view
-        return $this->loadDashboardView('juridico/visualizarNDI', $dados);
+        return $this->render('juridico/visualizarNDI', $dados);
     }
 
-    public function cadastrarNDI(): string
+    public function novo(): string
     {
         $session = session()->get();
 
@@ -137,7 +94,7 @@ class NDIControllers extends BaseController
         $dados['pessoasAdv'] = $this->pessoasModel->getPessoasAdv();
         $dados['servicos'] = $this->servicosModels->getAllServicos();
 
-        return $this->loadDashboardView('juridico/cadastrarNDI', $dados);
+        return $this->render('juridico/cadastrarNDI', $dados);
     }
 
     public function saveNDI()
@@ -160,6 +117,8 @@ class NDIControllers extends BaseController
             'id_promovido'          => $this->request->getPost('id_promovido'),
             'id_advogado_reu'       => $this->request->getPost('id_advogado_reu'),
             'id_escritorio_reu'     => $this->request->getPost('id_escritorio_reu'),
+            'id_fase'               => 1,
+            'id_status'             => 157,
             'criado_por'            => session()->get('username'), // Obtém o nome do usuário da sessão
             'dt_criacao'            => date('Y-m-d H:i:s'),       // Data e hora de criação
             'is_ativo'              => 1,                        // Define como ativo por padrão
@@ -211,7 +170,7 @@ class NDIControllers extends BaseController
             $dados['movimentacoes'] = $movimentacoes;
             $dados['fases'] = $this->faseModel->getFaseAtivo();
             $dados['usersAtivos'] = $this->userModel->getAllUsersAtivos();
-            return $this->loadDashboardView('juridico/visualizar', $dados);
+            return $this->render('juridico/visualizar', $dados);
         } else {
             return redirect()->to(base_url('juridico/ndiControllers'))->with('error', 'Ofício não encontrado.');
         }
@@ -229,7 +188,7 @@ class NDIControllers extends BaseController
             $dados['pessoasParte'] = $this->pessoasModel->getPessoasParte();
             $dados['pessoasAdv'] = $this->pessoasModel->getPessoasAdv();
             $dados['servicos'] = $this->servicosModels->getAllServicos();
-            return $this->loadDashboardView('juridico/editar', $dados);
+            return $this->render('juridico/editar', $dados);
         } else {
             return redirect()->to(base_url('juridico/ndiControllers'))->with('error', 'Ofício não encontrado.');
         }
@@ -290,7 +249,9 @@ class NDIControllers extends BaseController
         if ($ndi) {
             // Atualiza o campo 'is_ativo' para 0
             $data = [
-                'is_ativo' => 0,
+                'situacao' => 'C',
+                'id_fase' => 5,
+                'id_status' => 195,
                 'dt_alteracao' => date('Y-m-d H:i:s'),
                 'alterado_por' => session()->get('username')
             ];
@@ -364,7 +325,7 @@ class NDIControllers extends BaseController
             'id_responsavel' => $this->request->getPost('id_responsavel'),
         ];
 
-        $dataPrazo = $this->request->getPost('dt_prazo');
+        $dataPrazo = $this->formatarDataParaAmericano($this->request->getPost('dt_prazo'));
         if (!empty($dataPrazo)) {
             $dataMov['dt_prazo'] = $dataPrazo;
         }
@@ -378,13 +339,38 @@ class NDIControllers extends BaseController
                 'id_status'      => $this->request->getPost('id_status'),
                 'id_responsavel' => $this->request->getPost('id_responsavel'),
                 'dt_prazo'       => $dataPrazo,
-                'dt_alteracao'   => date('Y-m-d H:i:s'), // Data e hora de alteração
-                'alterado_por'   => session()->get('username'), // Nome do usuário que alterou
+                'dt_alteracao'   => date('Y-m-d H:i:s'),
+                'alterado_por'   => session()->get('username'),
             ];
+
+            $id_status = (int) $this->request->getPost('id_status');
+
+            // Lógica para definir a situação com base no status
+            if (in_array($id_status, [193, 194, 195, 196, 197, 198])) {
+                switch ($id_status) {
+                    case 193: // Concluso
+                    case 194: // Homologado
+                        $dataNdiUpdate['situacao'] = 'F'; // Fechado
+                        break;
+
+                    case 195: // Cancelado
+                        $dataNdiUpdate['situacao'] = 'C'; // Cancelado
+                        break;
+
+                    case 196: // Substituição
+                    case 197: // Preclusão
+                        $dataNdiUpdate['situacao'] = 'R'; // Recusado
+                        break;
+
+                    case 198: // Acordo
+                        $dataNdiUpdate['situacao'] = 'F'; // Fechado
+                        break;
+                }
+            }
 
             $this->ndiModels->update($id_ndi, $dataNdiUpdate);
 
-            $anexosModel = new \App\Models\Juridico\AnexosModels();
+            $anexosModel = new AnexosModels();
             $arquivos = $this->request->getFiles();
 
             if (!empty($arquivos['anexos'])) {
@@ -408,10 +394,73 @@ class NDIControllers extends BaseController
                 }
             }
 
-            return redirect()->back()->with('success', "Movimentação #{$id_movimento} adicionada com sucesso!");
+            return redirect()->back()->with('success', "Movimentação adicionada com sucesso!");
 
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erro ao adicionar movimentação: ' . $e->getMessage());
+        }
+    }
+
+    public function reabrirNdi($idNdi)
+    {
+        if (empty($idNdi)) {
+            return redirect()->back()->with('warning', 'ID do NDI não fornecido.');
+        }
+
+        try {
+            // Dados para atualizar o NDI
+            $dataUpdate = [
+                'situacao'     => 'A',
+                'id_fase'      => 1, // Fase inicial ao reabrir
+                'id_status'    => 157, // Status inicial ao reabrir
+                'dt_alteracao' => date('Y-m-d H:i:s'),
+                'alterado_por' => session()->get('username'),
+            ];
+
+            // Atualiza o NDI
+            $this->ndiModels->update($idNdi, $dataUpdate);
+
+            // Cria uma movimentação para registrar a reabertura
+            $descricaoMovimentacao = sprintf(
+                'NDI reaberto pelo usuário %s em %s.',
+                session()->get('username'),
+                date('d/m/Y H:i:s')
+            );
+
+            $dataMov = [
+                'id_ndi'       => $idNdi,
+                'descricao'    => $descricaoMovimentacao,
+                'id_usuario'   => session()->get('id_usuario'),
+                'id_fase'      => 1, // Fase inicial
+                'id_status'    => 157, // Status inicial
+                'dt_movimento' => date('Y-m-d H:i:s'),
+            ];
+
+            // Insere a movimentação
+            $this->movimentoModel->insert($dataMov);
+
+            return redirect()->back()->with('success', "NDI #{$idNdi} reaberto com sucesso e movimentação registrada!");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erro ao reabrir o NDI: ' . $e->getMessage());
+        }
+    }
+
+    public function updateDesconsiderar()
+    {
+        $idMovimento = $this->request->getPost('id_movimento');
+        $desconsiderar = $this->request->getPost('desconsiderar');
+
+        if (empty($idMovimento)) {
+            return $this->response->setJSON(['success' => false, 'message' => 'ID do movimento não fornecido.']);
+        }
+
+        try {
+            // Atualiza o campo desconsiderar no banco de dados
+            $this->movimentoModel->update($idMovimento, ['desconsiderar' => $desconsiderar]);
+
+            return $this->response->setJSON(['success' => true]);
+        } catch (\Exception $e) {
+            return $this->response->setJSON(['success' => false, 'message' => $e->getMessage()]);
         }
     }
 }

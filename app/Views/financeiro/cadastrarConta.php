@@ -4,23 +4,20 @@
         height: 1.5rem;
         margin-left: -2.5rem;
     }
-
     .form-switch .form-check-input:checked {
         background-color: #198754;
     }
-
     .form-switch .form-check-input::before {
         width: 1.5rem;
         height: 1.5rem;
         transform: translateX(0.2rem);
     }
-
     .form-switch .form-check-input:checked::before {
         transform: translateX(1.5rem);
     }
 </style>
 
-<div class="main">
+<div>
     <div class="container-fluid mt-3">
         <div class="card shadow-sm">
             <div class="card-header bg-secondary text-white">
@@ -42,7 +39,18 @@
                         <!-- Número Doc -->
                         <div class="col-md-3">
                             <label for="num_doc" class="form-label">Número Doc.</label>
-                            <input type="text" name="num_doc" id="num_doc" class="form-control" required>
+                            <input type="text" name="num_doc" id="num_doc" class="form-control">
+                        </div>
+
+                        <!-- NDI -->
+                        <div class="col-md-3">
+                            <label for="id_ndi" class="form-label">NDI:</label>
+                            <select name="id_ndi" id="id_ndi" class="form-control">
+                                <option value="">Selecione</option>
+                                <?php foreach ($ndis as $ndi): ?>
+                                    <option value="<?= $ndi->id_ndi ?>"><?= $ndi->id_ndi . ' - ' . $ndi->assunto ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
 
                         <!-- Cliente -->
@@ -55,42 +63,40 @@
                                 <?php endforeach; ?>
                             </select>
                         </div>
-
-                        <!-- NDI -->
-                        <div class="col-md-3">
-                            <label for="id_ndi" class="form-label">NDI:</label>
-                            <select name="id_ndi" id="id_ndi" class="form-control" required>
-                                <option value="">Selecione</option>
-                                <?php foreach ($ndis as $ndi): ?>
-                                    <option value="<?= $ndi->id_ndi ?>"><?= $ndi->id_ndi . ' - ' . $ndi->assunto ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
                     </div>
 
                     <div class="row mb-3">
+                        <!-- Descrição -->
+                        <div class="col-md-3">
+                            <label for="descricao" class="form-label">Descrição:</label>
+                            <input type="text" name="descricao" id="descricao" class="form-control" placeholder="Informe uma descrição do lançamento">
+                        </div>
+
                         <!-- Valor da Conta -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="vl_original" class="form-label">Valor da Conta:</label>
-                            <input type="text" name="vl_original" id="vl_original" class="form-control" required>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" name="vl_original" id="vl_original" class="form-control" required>
+                            </div>
                         </div>
 
                         <!-- Data de Vencimento -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="dt_vencimento" class="form-label">Data de Vencimento:</label>
-                            <input type="date" name="dt_vencimento" id="dt_vencimento" class="form-control" required>
+                            <input type="text" name="dt_vencimento" id="dt_vencimento" class="form-control datepicker" required placeholder="dd/mm/yyyy">
                         </div>
 
                         <!-- Data da Competência -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="dt_competencia" class="form-label">Data da Competência:</label>
-                            <input type="date" name="dt_competencia" id="dt_competencia" class="form-control" required>
+                            <input type="text" name="dt_competencia" id="dt_competencia" class="form-control datepicker" required placeholder="dd/mm/yyyy">
                         </div>
                     </div>
 
                     <div class="row mb-3">
                         <!-- Forma de Pagamento -->
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label for="id_forma_pagto" class="form-label">Forma de Pagamento:</label>
                             <select name="id_forma_pagto" id="id_forma_pagto" class="form-control" required>
                                 <option value="">Selecione</option>
@@ -100,20 +106,44 @@
                             </select>
                         </div>
 
-                        <!-- Número de Parcelas -->
-                        <div class="col-md-4">
+                        <!-- Tipo de Pagamento -->
+                        <div class="col-md-3">
+                            <label for="tp_conta" class="form-label">Tipo de Pagamento:</label>
+                            <select name="tp_conta" id="tp_conta" class="form-control" required>
+                                <option value="">Selecione</option>
+                                <option value="A">À vista</option>
+                                <option value="P">Parcelado</option>
+                                <option value="R">Recorrente</option>
+                            </select>
+                        </div>
+
+                        <!-- Campo para Parcelamento (aparece se selecionado "Parcelado") -->
+                        <div class="col-md-3" id="parcelas_container" style="display: none;">
                             <label for="num_parcelas" class="form-label">Número de Parcelas:</label>
-                            <select name="num_parcelas" id="num_parcelas" class="form-control" disabled>
-                                <?php for ($i = 1; $i <= 12; $i++) : ?>
+                            <select name="num_parcelas" id="num_parcelas" class="form-control">
+                                <?php for ($i = 2; $i <= 24; $i++) : ?>
                                     <option value="<?= $i ?>"><?= $i ?> parcelas</option>
                                 <?php endfor; ?>
                             </select>
                         </div>
 
-                        <!-- Valor das Parcelas -->
-                        <div class="col-md-4">
-                            <label for="val_parcela" class="form-label">Valor das Parcelas:</label>
-                            <input type="text" name="val_parcela" id="val_parcela" class="form-control" disabled readonly>
+                        <!-- Campo para Recorrência (aparece se selecionado "Recorrente") -->
+                        <div class="col-md-3" id="lancamentos_container" style="display: none;">
+                            <label for="num_lancamentos" class="form-label">Número de Lançamentos:</label>
+                            <select name="num_lancamentos" id="num_lancamentos" class="form-control">
+                                <?php for ($i = 2; $i <= 24; $i++) : ?>
+                                    <option value="<?= $i ?>"><?= $i ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        </div>
+
+                        <!-- Campo para exibir o valor de cada parcela (somente para parcelado) -->
+                        <div class="col-md-3" id="valor_parcelas_container" style="display: none;">
+                            <label for="val_parcela" class="form-label">Valor da Parcela:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" name="val_parcela" id="val_parcela" class="form-control" disabled readonly>
+                            </div>
                         </div>
                     </div>
 
@@ -149,42 +179,40 @@
 <script>
     $(document).ready(function () {
 
-        $('#id_pessoa').select2({
-            placeholder: 'Digite para pesquisar um cliente.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
+        $('#id_ndi').change(function() {
+            var id_ndi = $(this).val();
+            if (id_ndi !== "") {
+                $.ajax({
+                    url: '<?= base_url('pessoas/pessoasControllers/ajax/buscaClienteNDI') ?>',
+                    type: 'POST',
+                    data: { 
+                        id_ndi: id_ndi 
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            $('#id_pessoa').val(response.id_pessoa).trigger('change');
+                        } else {
+                            $('#id_pessoa').val('').trigger('change');
+                            showCustomAlert(response.message, 'warning');
+                        }
+                    },
+                    error: function() {
+                        showCustomAlert('Erro ao buscar cliente. Tente novamente.', 'danger');
+                    }
+                });
+            } else {
+                $('#id_pessoa').val('').trigger('change');
+            }
         });
 
-        $('#id_ndi').select2({
-            placeholder: 'Digite para pesquisar um cliente.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
+        inicializarSelect2('#id_pessoa', 'Digite para pesquisar um cliente.');
+        inicializarSelect2('#id_ndi', 'Digite para pesquisar um cliente.');
+        inicializarSelect2('#id_forma_pagto', 'Digite para pesquisar uma forma de pagamento.');
+        inicializarSelect2('#tp_conta', 'Selecione o tipo de pagamento.');
 
-        $('#id_forma_pagto').select2({
-            placeholder: 'Digite para pesquisar uma forma de pagamento.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
-
-        // Máscara para o campo de valor
         $('#vl_original').mask('#.##0,00', { reverse: true });
 
-        $('#dt_vencimento').on('click focus', function () {
-            this.showPicker(); // Método para abrir o calendário
-        });
-
-        $('#dt_competencia').on('click focus', function () {
-            this.showPicker(); // Método para abrir o calendário
-        });
-    
-        // Configuração do Toastr
         toastr.options = {
             "closeButton": true,
             "debug": false,
@@ -202,34 +230,49 @@
             "showMethod": "fadeIn",
             "hideMethod": "fadeOut"
         };
-    
-        // Mostrar ou ocultar a seção de parcelamento baseado na Forma de Pagamento
-        $('#id_forma_pagto').on('change', function () {
-            $('#num_parcelas').prop('disabled', false); // Habilitar o campo de número de parcelas
-            $('#val_parcela').prop('disabled', false);  // Habilitar o campo de valor das parcelas
-        });
-    
-        // Função para calcular o valor das parcelas
-        $('#num_parcelas, #vl_original').on('change keyup', function () {
-            let valorConta = parseFloat($('#vl_original').val().replace(/\./g, '').replace(',', '.')) || 0;
-            let numeroParcelas = parseInt($('#num_parcelas').val()) || 1;
-        
-            // Se o valor da conta estiver vazio ou 0, zerar o campo de valor das parcelas
-            if (valorConta === 0) {
-                $('#val_parcela').val('');
-            } else if (numeroParcelas > 0 && valorConta > 0) {
-                let valorParcela = (valorConta / numeroParcelas).toFixed(2); // Calcula o valor das parcelas
-                $('#val_parcela').val(valorParcela.replace('.', ',')); // Atualiza o campo de valor das parcelas
+
+        // Gerenciar exibição dos campos conforme o tipo de pagamento selecionado
+        $('#tp_conta').change(function(){
+            var tipo = $(this).val();
+            if (tipo === 'P') {
+                $('#parcelas_container').show();
+                $('#lancamentos_container').hide();
+                $('#valor_parcelas_container').show();
+            } else if (tipo === 'R') {
+                $('#lancamentos_container').show();
+                $('#parcelas_container').hide();
+                $('#valor_parcelas_container').hide(); // Esconde o cálculo para recorrente
+            } else {
+                $('#parcelas_container').hide();
+                $('#lancamentos_container').hide();
+                $('#valor_parcelas_container').hide();
             }
         });
-    
-        $('#btnCadastrar').on('click', function () {
+
+        // Função para calcular e exibir o valor da parcela apenas para o pagamento parcelado
+        function calcularValorParcela() {
+            var tipo = $('#tp_conta').val();
+            if (tipo !== 'P') {
+                return;
+            }
+            let valorConta = parseFloat($('#vl_original').val().replace(/\./g, '').replace(',', '.')) || 0;
+            let num = parseInt($('#num_parcelas').val()) || 1;
+            if (valorConta === 0 || num === 0) {
+                $('#val_parcela').val('');
+            } else {
+                let valorParcela = (valorConta / num).toFixed(2);
+                $('#val_parcela').val(valorParcela.replace('.', ','));
+            }
+        }
+
+        // Atualiza o valor sempre que o valor da conta ou número de parcelas mudar (apenas para parcelado)
+        $('#vl_original, #num_parcelas').on('change keyup', calcularValorParcela);
+
+        // Validação do formulário
+        $('#btnCadastrar').on('click', function (e) {
             let formValid = true;
-            
-            // Remover mensagens anteriores do Toastr
             toastr.clear();
-        
-            // Verificar todos os campos do formulário
+
             $('#formCadastro [required]').each(function () {
                 if ($(this).val() === '' || $(this).val() === '0') {
                     formValid = false;
@@ -237,16 +280,22 @@
                     toastr.error('O campo ' + label + ' é obrigatório.', 'Erro!');
                 }
             });
-        
-            // Verificar se Cartão de Crédito está selecionado e o número de parcelas foi selecionado
-            if ($('#num_parcelas').val() === '') {
-                formValid = false;
-                toastr.error('O campo Número de Parcelas é obrigatório.', 'Erro!');
+
+            var tipo = $('#tp_conta').val();
+            if (tipo === 'P') {
+                if (!$('#num_parcelas').val() || $('#num_parcelas').val() === '0') {
+                    formValid = false;
+                    toastr.error('O campo Número de Parcelas é obrigatório.', 'Erro!');
+                }
+            } else if (tipo === 'R') {
+                if (!$('#num_lancamentos').val() || $('#num_lancamentos').val() === '0') {
+                    formValid = false;
+                    toastr.error('O campo Número de Lançamentos é obrigatório.', 'Erro!');
+                }
             }
-        
-            // Se o formulário for válido, submeta-o
-            if (formValid) {
-                $('#formCadastro').submit();
+
+            if (!formValid) {
+                e.preventDefault();
             }
         });
     });

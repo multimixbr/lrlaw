@@ -46,7 +46,7 @@
     }
 </style>
 
-<div class="main">
+<div>
     <div class="container-fluid mt-3">
         <div class="card shadow-sm">
             <div class="card-header bg-secondary text-white">
@@ -66,13 +66,16 @@
                         <!-- Valor da Parcela -->
                         <div class="col-md-4 mb-2">
                             <label for="vl_parcela" class="form-label">Valor da Parcela:</label>
-                            <input type="text" name="vl_parcela" id="vl_parcela" class="form-control" value="<?= number_format($parcela->vl_parcela, 2, ',', '.') ?>">
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" name="vl_parcela" id="vl_parcela" class="form-control" value="<?= number_format($parcela->vl_parcela, 2, ',', '.') ?>">
+                            </div>
                         </div>
 
                         <!-- Data de Vencimento -->
                         <div class="col-md-4 mb-2">
                             <label for="dt_vencimento" class="form-label">Data de Vencimento:</label>
-                            <input type="date" name="dt_vencimento" id="dt_vencimento" class="form-control" value="<?= date('Y-m-d', strtotime($parcela->dt_vencimento)) ?>">
+                            <input type="text" name="dt_vencimento" id="dt_vencimento" class="form-control datepicker" value="<?= date('d/m/Y', strtotime($parcela->dt_vencimento)) ?>">
                         </div>
                     </div>
 
@@ -133,7 +136,4 @@
         });
     });
 
-    $('#dt_vencimento').on('click focus', function() {
-        this.showPicker(); // Método para abrir o calendário
-    });
 </script>

@@ -6,14 +6,12 @@ use App\Controllers\BaseController;
 use App\Models\Pessoas\PessoasModels;
 use App\Models\Financeiro\LancamentosModels;
 use App\Models\Juridico\NDIModels;
-use App\Models\Financeiro\LanParcelaModels;
 use App\Models\Financeiro\AnexosModel;
 
 class FinanceiroControllers extends BaseController
 {
 
     protected $lancamentosModels;
-    protected $lanParcelaModels;
     protected $pessoasModel;
     protected $anexosModel;
     protected $ndiModels;
@@ -21,54 +19,42 @@ class FinanceiroControllers extends BaseController
     public function __construct()
     {
         $this->lancamentosModels = new LancamentosModels();
-        $this->lanParcelaModels = new LanParcelaModels();
         $this->pessoasModel = new PessoasModels();
         $this->anexosModel = new AnexosModel();
         $this->ndiModels = new NDIModels();
     }
 
-    private function loadDashboardView($viewName, $data = [])
-    {
-        echo view('dashboard/dashboard');
-        return view($viewName, $data);
-    }
-
     public function index(): string
     {
-        return $this->loadDashboardView('financeiro/financeiro');
-    }
-
-    public function filtrar()
-    {
         $session = session()->get();
-
+    
         $dados['session'] = $session;
-
+        $dados['formasPagamento'] = $this->lancamentosModels->getFormaPgto();
+    
         // Captura os filtros da requisição GET, incluindo o novo filtro por ID
         $dados['filtros'] = [
-            'id_lan' => $this->request->getGet('id_lan'), // Filtro por ID do lançamento
-            'tp_lancamento' => $this->request->getGet('tp_lancamento'),
-            'num_doc' => $this->request->getGet('num_doc'),
-            'id_ndi' => $this->request->getGet('id_ndi'),
-            'nm_pessoa' => $this->request->getGet('nm_pessoa'),
-            'dt_vencimento' => $this->request->getGet('dt_vencimento'),
-            'id_forma_pagto' => $this->request->getGet('id_forma_pagto'),
-            'vl_conta' => $this->request->getGet('vl_conta'),
-            'is_conferido' => $this->request->getGet('is_conferido'),
-            'is_aprovado' => $this->request->getGet('is_aprovado'),
-            'situacao' => $this->request->getGet('situacao')
+            'id_lan' => $this->request->getGet('id_lan') ?? '',
+            'tp_lancamento' => $this->request->getGet('tp_lancamento') ?? '',
+            'num_doc' => $this->request->getGet('num_doc') ?? '',
+            'id_ndi' => $this->request->getGet('id_ndi') ?? '',
+            'nm_pessoa' => $this->request->getGet('nm_pessoa') ?? '',
+            'dt_vencimento' => $this->request->getGet('dt_vencimento') ? $this->formatarDataParaAmericano($this->request->getGet('dt_vencimento')) : '',
+            'id_forma_pagto' => $this->request->getGet('id_forma_pagto') ?? '',
+            'vl_conta' => $this->request->getGet('vl_conta') ? $this->convertToDecimal($this->request->getGet('vl_conta')) : '',
+            'is_conferido' => $this->request->getGet('is_conferido') ?? '',
+            'is_aprovado' => $this->request->getGet('is_aprovado') ?? '',
+            'situacao' => $this->request->getGet('situacao') ?? ''
         ];
-
-        $dados['formasPagamento'] = $this->lancamentosModels->getFormaPgto();
-
-        // Passa os filtros para o método da model
-        $dados['lancamentos'] = $this->lancamentosModels->getLancamentosFiltro($dados['filtros']);
-
-        // Passa os dados para a view
-        return $this->loadDashboardView('financeiro/visualizarContas', $dados);
+    
+        // Busca apenas se houver filtros aplicados
+        $dados['lancamentos'] = array_filter($dados['filtros'])
+            ? $this->lancamentosModels->getLancamentosFiltro($dados['filtros'])
+            : [];
+    
+        return $this->render('financeiro/visualizarContas', $dados);
     }
 
-    public function cadastrarContas(): string
+    public function novo(): string
     {
         $session = session()->get();
 
@@ -77,33 +63,7 @@ class FinanceiroControllers extends BaseController
         $dados['pessoas'] = $this->pessoasModel->getAllPessoas();
         $dados['formasPagamento'] = $this->lancamentosModels->getFormaPgto();
 
-        return $this->loadDashboardView('financeiro/cadastrarConta', $dados);
-    }
-
-    public function visualizarContas(): string
-    {
-        $session = session()->get();
-
-        $dados['session'] = $session;
-        $dados['lancamentos'] = $this->lancamentosModels->getAllLancamentos();
-        $dados['formasPagamento'] = $this->lancamentosModels->getFormaPgto();
-
-        // Filtros com valores padrão, incluindo o filtro por ID
-        $dados['filtros'] = [
-            'id_lan' => '', // Adicionando o filtro por ID no formulário de visualização
-            'tp_lancamento' => '',
-            'num_doc' => '',
-            'id_ndi' => '',
-            'nm_pessoa' => '',
-            'dt_vencimento' => '',
-            'id_forma_pagto' => '',
-            'vl_conta' => '',
-            'is_conferido' => '',
-            'is_aprovado' => '',
-            'situacao' => ''
-        ];
-
-        return $this->loadDashboardView('financeiro/visualizarContas', $dados);
+        return $this->render('financeiro/cadastrarConta', $dados);
     }
 
     public function controleContas(): string
@@ -126,94 +86,142 @@ class FinanceiroControllers extends BaseController
         $dados['total_baixado_nubank'] = $this->lancamentosModels->getTotalByStatusAndConta('B', 2);
     
         // Carregar a view com os dados
-        return $this->loadDashboardView('financeiro/controleContas', $dados);
+        return $this->render('financeiro/controleContas', $dados);
     }
 
     public function saveLancamentos()
     {
-        // Variável para acumular as descrições das auditorias
         $auditoriaDescricao = '';
+        $idFormaPagto   = $this->request->getPost('id_forma_pagto');
+        $valorOriginal  = $this->convertToDecimal($this->request->getPost('vl_original'));
+        $dataVencimentoInicial = $this->formatarDataParaAmericano($this->request->getPost('dt_vencimento'));
+        $tipoPagamentoInput = $this->request->getPost('tp_conta'); 
 
-        // Obtém os dados do formulário
-        $idFormaPagto = $this->request->getPost('id_forma_pagto');
-        $numParcelas = max(1, (int)$this->request->getPost('num_parcelas'));
-        $valorOriginal = $this->convertToDecimal($this->request->getPost('vl_original'));
-        $valorParcela = round($valorOriginal / $numParcelas, 2);
-        
-        // Dados para o lançamento principal
-        $dataLancamentoPrincipal = [
-            'tp_lancamento'  => $this->request->getPost('tp_lancamento'),
-            'num_doc'        => $this->request->getPost('num_doc'),
-            'id_conta'       => $this->request->getPost('id_conta'),
-            'id_pessoa'      => $this->request->getPost('id_pessoa'),
-            'id_ndi'         => $this->request->getPost('id_ndi'),
-            'vl_original'    => $valorOriginal,
-            'complemento'    => $this->request->getPost('complemento'),
-            'dt_vencimento'  => $this->request->getPost('dt_vencimento'),
-            'dt_competencia' => $this->request->getPost('dt_competencia'),
-            'id_forma_pagto' => $idFormaPagto,
-            'criado_por'     => $this->request->getPost('criado_por'),
-            'dt_criacao'     => date('Y-m-d H:i:s'),
-            'is_ativo'       => 1,
-            'dt_alteracao'   => date('Y-m-d H:i:s'),
-            'alterado_por'   => $this->request->getPost('criado_por'),
-            'situacao'       => 'A'
-        ];
-
-        // Salva o lançamento principal
-        if (!$this->lancamentosModels->save($dataLancamentoPrincipal)) {
-            $errors = $this->lancamentosModels->errors();
-            $this->db->transRollback();
-            session()->setFlashdata('error', 'Falha ao cadastrar o usuário. Tente novamente.');
-            return redirect()->back();
+        if ($tipoPagamentoInput == 'A') {
+             $tpConta = 'A';
+        } elseif ($tipoPagamentoInput == 'P') {
+             $tpConta = 'P';
+        } elseif ($tipoPagamentoInput == 'R') {
+             $tpConta = 'R';
+        } else {
+             $tpConta = 'A';
         }
 
-        // Obtém o ID do lançamento principal
-        $idLancamentoPrincipal = $this->lancamentosModels->getInsertID();
-        $auditoriaDescricao .= "Lançamento principal inserido com ID: $idLancamentoPrincipal. ";
+        $dataLancamentoPrincipal = [
+             'tp_lancamento'  => $this->request->getPost('tp_lancamento'),
+             'num_doc'        => $this->request->getPost('num_doc'),
+             'id_conta'       => $this->request->getPost('id_conta'),
+             'id_pessoa'      => $this->request->getPost('id_pessoa'),
+             'id_ndi'         => $this->request->getPost('id_ndi') ?: null,
+             'vl_original'    => $valorOriginal,
+             'descricao'      => $this->request->getPost('descricao'),
+             'complemento'    => $this->request->getPost('complemento'),
+             'dt_vencimento'  => $dataVencimentoInicial,
+             'dt_competencia' => $this->formatarDataParaAmericano($this->request->getPost('dt_competencia')),
+             'id_forma_pagto' => $idFormaPagto,
+             'criado_por'     => $this->request->getPost('criado_por'),
+             'dt_criacao'     => date('Y-m-d H:i:s'),
+             'is_ativo'       => 1,
+             'dt_alteracao'   => date('Y-m-d H:i:s'),
+             'alterado_por'   => $this->request->getPost('criado_por'),
+             'situacao'       => 'A',
+             'tp_conta'       => $tpConta
+        ];
 
-        // Se houver parcelas, salva cada uma
-        if ($numParcelas > 1) {
-            $dataVencimentoInicial = $this->request->getPost('dt_vencimento');
-
-            for ($parcela = 1; $parcela <= $numParcelas; $parcela++) {
-                $dataVencimentoParcela = date('Y-m-d', strtotime("+".($parcela - 1)." month", strtotime($dataVencimentoInicial)));
-
-                $dataParcela = [
-                    'id_lan'          => $idLancamentoPrincipal,
-                    'vl_parcela'      => $valorParcela,
-                    'num_parcela'     => $parcela,
-                    'is_ativo'        => 1,
-                    'dt_vencimento'   => $dataVencimentoParcela,
-                    'observacao'      => "Parcela $parcela de $numParcelas",
-                    'situacao'        => 'A'
-                ];
-
-                if (!$this->lanParcelaModels->save($dataParcela)) {
-                    $errors = $this->lanParcelaModels->errors();
-                    $this->db->transRollback();
-                    session()->setFlashdata('error', 'Falha ao cadastrar o usuário. Tente novamente.');
-                    return redirect()->back();
-                }
-
-                $auditoriaDescricao .= "Parcela $parcela de $numParcelas salva. ";
+        if ($tpConta == 'A') {
+            // À vista: lançamento único
+            if (!$this->lancamentosModels->save($dataLancamentoPrincipal)) {
+                $errors = $this->lancamentosModels->errors();
+                $this->db->transRollback();
+                session()->setFlashdata('error', 'Falha ao cadastrar o lançamento à vista. Tente novamente.');
+                return redirect()->back();
             }
+            $idLancamentoPrincipal = $this->lancamentosModels->getInsertID();
+            $auditoriaDescricao .= "Lançamento à vista inserido com ID: $idLancamentoPrincipal. ";
+        }
+        elseif ($tpConta == 'P') {
+            // Parcelado: divide o valor total pelo número de parcelas e insere todos os registros na mesma tabela
+            $numParcelas = max(1, (int)$this->request->getPost('num_parcelas'));
+            $valorParcela = round($valorOriginal / $numParcelas, 2);
+
+            // Define o valor da parcela no registro principal
+            $dataLancamentoPrincipal['vl_original'] = $valorParcela;
+            if (!$this->lancamentosModels->save($dataLancamentoPrincipal)) {
+                $errors = $this->lancamentosModels->errors();
+                $this->db->transRollback();
+                session()->setFlashdata('error', 'Falha ao cadastrar o lançamento parcelado. Tente novamente.');
+                return redirect()->back();
+            }
+            $idLancamentoPrincipal = $this->lancamentosModels->getInsertID();
+            $auditoriaDescricao .= "Lançamento parcelado principal inserido com ID: $idLancamentoPrincipal. ";
+
+            if ($numParcelas > 1) {
+                for ($i = 2; $i <= $numParcelas; $i++) {
+                    $dataVencimento = date('Y-m-d', strtotime("+" . ($i - 1) . " month", strtotime($dataVencimentoInicial)));
+                    $dataLancamentoParcelado = $dataLancamentoPrincipal;
+                    $dataLancamentoParcelado['dt_vencimento'] = $dataVencimento;
+                    $dataLancamentoParcelado['id_lan_pai'] = $idLancamentoPrincipal;
+                    if (!$this->lancamentosModels->save($dataLancamentoParcelado)) {
+                        $errors = $this->lancamentosModels->errors();
+                        $this->db->transRollback();
+                        session()->setFlashdata('error', 'Falha ao cadastrar os lançamentos parcelados. Tente novamente.');
+                        return redirect()->back();
+                    }
+                    $auditoriaDescricao .= "Parcela $i de $numParcelas salva com vencimento em $dataVencimento. ";
+                }
+            }
+        }
+        elseif ($tpConta == 'R') {
+            // Recorrente: insere o número selecionado de lançamentos com vencimento acrescido de 1 mês a cada registro
+            $numLancamentos = max(1, (int)$this->request->getPost('num_lancamentos'));
+            if (!$this->lancamentosModels->save($dataLancamentoPrincipal)) {
+                $errors = $this->lancamentosModels->errors();
+                $this->db->transRollback();
+                session()->setFlashdata('error', 'Falha ao cadastrar o lançamento recorrente. Tente novamente.');
+                return redirect()->back();
+            }
+            $idLancamentoPrincipal = $this->lancamentosModels->getInsertID();
+            $auditoriaDescricao .= "Lançamento recorrente principal inserido com ID: $idLancamentoPrincipal. ";
+
+            if ($numLancamentos > 1) {
+                for ($i = 2; $i <= $numLancamentos; $i++) {
+                    $dataVencimento = date('Y-m-d', strtotime("+" . ($i - 1) . " month", strtotime($dataVencimentoInicial)));
+                    $dataLancamentoRecorrente = $dataLancamentoPrincipal;
+                    $dataLancamentoRecorrente['dt_vencimento'] = $dataVencimento;
+                    $dataLancamentoRecorrente['id_lan_pai'] = $idLancamentoPrincipal;
+                    if (!$this->lancamentosModels->save($dataLancamentoRecorrente)) {
+                        $errors = $this->lancamentosModels->errors();
+                        $this->db->transRollback();
+                        session()->setFlashdata('error', 'Falha ao cadastrar os lançamentos recorrentes. Tente novamente.');
+                        return redirect()->back();
+                    }
+                    $auditoriaDescricao .= "Lançamento recorrente $i de $numLancamentos salvo com vencimento em $dataVencimento. ";
+                }
+            }
+        }
+        else {
+            // Caso não seja identificado, insere como lançamento único (padrão)
+            if (!$this->lancamentosModels->save($dataLancamentoPrincipal)) {
+                $errors = $this->lancamentosModels->errors();
+                $this->db->transRollback();
+                session()->setFlashdata('error', 'Falha ao cadastrar o lançamento. Tente novamente.');
+                return redirect()->back();
+            }
+            $idLancamentoPrincipal = $this->lancamentosModels->getInsertID();
+            $auditoriaDescricao .= "Lançamento inserido com ID: $idLancamentoPrincipal. ";
         }
 
         // Tratamento dos anexos
         $files = $this->request->getFiles();
-
         if ($files && isset($files['documentos'])) {
             $uploadPath = ROOTPATH . 'public/storage/uploads/lancamento/';
             if (!is_dir($uploadPath)) {
                 mkdir($uploadPath, 0755, true);
             }
-
             foreach ($files['documentos'] as $file) {
                 if ($file->isValid() && !$file->hasMoved()) {
                     $newName = $file->getRandomName();
                     $file->move($uploadPath, $newName);
-
                     $dataAnexo = [
                         'id_lancamento'   => $idLancamentoPrincipal,
                         'nome_arquivo'    => $file->getClientName(),
@@ -222,14 +230,12 @@ class FinanceiroControllers extends BaseController
                         'enviado_por'     => $this->request->getPost('criado_por'),
                         'data_envio'      => date('Y-m-d H:i:s')
                     ];
-
                     if (!$this->anexosModel->save($dataAnexo)) {
                         $errors = $this->anexosModel->errors();
                         $this->db->transRollback();
-                        session()->setFlashdata('error', 'Falha ao cadastrar o usuário. Tente novamente.');
+                        session()->setFlashdata('error', 'Falha ao cadastrar o anexo. Tente novamente.');
                         return redirect()->back();
                     }
-
                     $auditoriaDescricao .= "Anexo {$file->getClientName()} salvo. ";
                 }
             }
@@ -237,24 +243,21 @@ class FinanceiroControllers extends BaseController
 
         // Finaliza a transação
         $this->db->transComplete();
-
         if ($this->db->transStatus() === FALSE) {
-            session()->setFlashdata('error', 'Falha ao cadastrar o usuário. Tente novamente.');
+            session()->setFlashdata('error', 'Falha ao cadastrar o lançamento. Tente novamente.');
             return redirect()->back();
         } else {
-            // Registra a auditoria consolidada
             $this->audit([
-                'descricao' => $auditoriaDescricao,
-                'usuario' => $this->request->getPost('criado_por'),
-                'ip_user' => $this->request->getIPAddress(),
-                'acao' => 'INSERT',
-                'modulo' => 'Financeiro',
-                'funcionalidade' => 'Cadastrar Lancamento Completo',
-                'operacao' => 'Criar',
+                'descricao'       => $auditoriaDescricao,
+                'usuario'         => $this->request->getPost('criado_por'),
+                'ip_user'         => $this->request->getIPAddress(),
+                'acao'            => 'INSERT',
+                'modulo'          => 'Financeiro',
+                'funcionalidade'=> 'Cadastrar Lancamento Completo',
+                'operacao'      => 'Criar',
             ]);
-
-            session()->setFlashdata('success', 'Usuário cadastrado com sucesso.');
-            return redirect()->to(base_url('config/configControllers'));
+            session()->setFlashdata('success', "Lançamento: {$idLancamentoPrincipal}. Cadastrado com sucesso.");
+            return redirect()->to(base_url('financeiro/financeiroControllers/visualizar/' . $idLancamentoPrincipal));
         }
     }
 
@@ -358,12 +361,12 @@ class FinanceiroControllers extends BaseController
     public function visualizar($id)
     {
         $lancamento = $this->lancamentosModels->find($id);
+        $lancamentoFilhos = $this->lancamentosModels->getLanFilho($id);
 
         if ($lancamento) {
-            // Registro de auditoria
             $this->audit([
                 'descricao' => "Visualização de lançamento ID: $id",
-                'usuario' => session()->get('username'), // ID do usuário logado
+                'usuario' => session()->get('username'), 
                 'ip_user' => $this->request->getIPAddress(),
                 'acao' => 'VIEW',
                 'modulo' => 'Financeiro',
@@ -371,18 +374,20 @@ class FinanceiroControllers extends BaseController
                 'operacao' => 'Visualizar',
             ]);
 
+            if ($lancamento['id_ndi'] != null) {
+                $lancamento['ndi_assunto'] = $lancamento['id_ndi'] . ' - ' . $this->ndiModels->getNDIByID($lancamento['id_ndi'])->assunto;
+            }
             $dados['lancamento'] = $lancamento;
+            $dados['lancamentoFilhos'] = $lancamentoFilhos;
             $dados['cliente'] = $this->pessoasModel->getNomePessoaByID($lancamento['id_pessoa']);
             $dados['formasPagamento'] = $this->lancamentosModels->getFormaPgto();
             $dados['anexos'] = $this->anexosModel->getAnexosLancamentosID($id);
-            $dados['parcelas'] = $this->lanParcelaModels->getParcelasLan($id);
 
-            return $this->loadDashboardView('financeiro/visualizar', $dados);
+            return $this->render('financeiro/visualizar', $dados);
         } else {
-            // Registro de tentativa de visualização com ID inválido
             $this->audit([
                 'descricao' => "Tentativa de visualização de lançamento com ID inexistente: $id",
-                'usuario' => session()->get('username'), // ID do usuário logado
+                'usuario' => session()->get('username'), 
                 'ip_user' => $this->request->getIPAddress(),
                 'acao' => 'VIEW',
                 'modulo' => 'Financeiro',
@@ -394,7 +399,6 @@ class FinanceiroControllers extends BaseController
         }
     }
 
-
     public function editar($id)
     {
         $lancamento = $this->lancamentosModels->find($id);
@@ -404,8 +408,7 @@ class FinanceiroControllers extends BaseController
             $dados['ndis'] = $this->ndiModels->getAllNDIS();
             $dados['formasPagamento'] = $this->lancamentosModels->getFormaPgto();
             $dados['anexos'] = $this->anexosModel->getAnexosLancamentosID($id);
-            $dados['totalNumParcela'] = count($this->lanParcelaModels->getParcelasLan($id));
-            return $this->loadDashboardView('financeiro/editar', $dados);
+            return $this->render('financeiro/editar', $dados);
         } else {
             return redirect()->to(base_url('financeiro/financeiroControllers'))->with('error', 'Lançamento não encontrado.');
         }
@@ -413,197 +416,56 @@ class FinanceiroControllers extends BaseController
 
     public function atualizar($id)
     {
-        // Inicia a transação (caso ainda não esteja iniciada)
         $this->db->transStart();
-
-        // Variável para acumular a descrição da auditoria
         $auditDescription = "Atualização do lançamento ID: $id. ";
     
-        // Recupera o lançamento existente
         $lancamento = $this->lancamentosModels->find($id);
         if (!$lancamento) {
             session()->setFlashdata('error', 'Lançamento não encontrado.');
             return redirect()->back();
         }
     
-        // Recupera as parcelas existentes
-        $parcelas = $this->lanParcelaModels->where('id_lan', $id)->findAll();
-    
-        // Conta as parcelas pagas ou canceladas
-        $parcelasPagasOuCanceladas = $this->lanParcelaModels
-            ->where('id_lan', $id)
-            ->whereIn('situacao', ['B', 'C']) // 'B' para pago, 'C' para cancelado
-            ->countAllResults();
-    
-        // Obtém a forma de pagamento atual e o número de parcelas
-        $currentFormaPagto   = $lancamento['id_forma_pagto'];
-        $currentNumParcelas  = count($parcelas) > 0 ? count($parcelas) : 1;
-    
-        // Obtém os novos dados do request
         $dados = $this->request->getPost();
     
-        // Corrige o formato do valor se estiver presente
+        if (empty($dados['id_ndi'])) {
+            unset($dados['id_ndi']);
+        }
+
+        $dados['dt_vencimento'] = $this->formatarDataParaAmericano($dados['dt_vencimento']);
+        $dados['dt_competencia'] = $this->formatarDataParaAmericano($dados['dt_competencia']);
+
         if (isset($dados['vl_original'])) {
             $dados['vl_original'] = $this->convertToDecimal($dados['vl_original']);
         }
-    
-        // Obtém a nova forma de pagamento e o novo número de parcelas
-        $newFormaPagto   = $dados['id_forma_pagto'];
-        $newNumParcelas  = isset($dados['num_parcelas']) ? (int)$dados['num_parcelas'] : 1;
-    
-        // Verifica se é possível alterar a forma de pagamento ou o número de parcelas
-        if ($parcelasPagasOuCanceladas > 0) {
-            // Existem parcelas pagas ou canceladas, não pode alterar dados sensíveis
-            if ($newFormaPagto != $currentFormaPagto) {
-                session()->setFlashdata('error', 'Não é permitido alterar a forma de pagamento pois existem parcelas pagas ou canceladas.');
-                return redirect()->back()->withInput();
-            }
-            if ($newNumParcelas != $currentNumParcelas) {
-                session()->setFlashdata('error', 'Não é permitido alterar o número de parcelas pois existem parcelas pagas ou canceladas.');
-                return redirect()->back()->withInput();
-            }
-            if ($lancamento['vl_original'] != $dados['vl_original']) {
-                session()->setFlashdata('error', 'Não é permitido alterar o valor original pois existem parcelas pagas ou canceladas.');
-                return redirect()->back()->withInput();
-            }
-            
-            $auditDescription .= "Tentativa de alterar campos bloqueados por ter parcelas pagas/canceladas. ";
-        } else {
-            // Não há parcelas pagas ou canceladas, então podemos alterar a forma de pagamento e o número de parcelas
-            if ($newFormaPagto != $currentFormaPagto || $newNumParcelas != $currentNumParcelas) {
-                $auditDescription .= "Forma de pagamento ou número de parcelas foi alterado. ";
-            
-                // Deleta as parcelas existentes
-                $this->lanParcelaModels->where('id_lan', $id)->delete();
-                $auditDescription .= "Parcelas antigas removidas. ";
-            
-                // Se o número de parcelas > 1, cria novas parcelas
-                if ($newNumParcelas > 1) {
-                    $valorOriginal  = $dados['vl_original'];
-                    $valorParcela   = round($valorOriginal / $newNumParcelas, 2);
-                
-                    // Ajusta a última parcela para cobrir possíveis diferenças de arredondamento
-                    $valorTotalParcelas = $valorParcela * $newNumParcelas;
-                    $diferenca         = $valorOriginal - $valorTotalParcelas;
-                    $valorParcelaUltima = ($diferenca != 0)
-                        ? $valorParcela + $diferenca
-                        : $valorParcela;
-                
-                    // Cria as novas parcelas
-                    $dataVencimentoInicial = $dados['dt_vencimento'];
-                    for ($parcela = 1; $parcela <= $newNumParcelas; $parcela++) {
-                        $dataVencimentoParcela = date('Y-m-d', strtotime("+".($parcela - 1)." month", strtotime($dataVencimentoInicial)));
-                        
-                        // Usa o valor ajustado para a última parcela
-                        $valorParcelaAtual = ($parcela == $newNumParcelas)
-                            ? $valorParcelaUltima
-                            : $valorParcela;
-                    
-                        $dataParcela = [
-                            'id_lan'        => $id,
-                            'vl_parcela'    => $valorParcelaAtual,
-                            'num_parcela'   => $parcela,
-                            'is_ativo'      => 1,
-                            'dt_vencimento' => $dataVencimentoParcela,
-                            'observacao'    => "Parcela $parcela de $newNumParcelas",
-                            'situacao'      => 'A',
-                        ];
-                    
-                        if (!$this->lanParcelaModels->insert($dataParcela)) {
-                            $errors = $this->lanParcelaModels->errors();
-                            $this->db->transRollback();
-                            session()->setFlashdata('error', 'Falha ao atualizar o lançamento. Tente novamente.');
-                            return redirect()->back();
-                        }
-                    }
-                    $auditDescription .= "Novas parcelas criadas: $newNumParcelas. ";
-                } else {
-                    // Se o número de parcelas é 1, cria uma única parcela
-                    $dataParcela = [
-                        'id_lan'        => $id,
-                        'vl_parcela'    => $dados['vl_original'],
-                        'num_parcela'   => 1,
-                        'is_ativo'      => 1,
-                        'dt_vencimento' => $dados['dt_vencimento'],
-                        'observacao'    => "Parcela única",
-                        'situacao'      => 'A',
-                    ];
-                
-                    if (!$this->lanParcelaModels->insert($dataParcela)) {
-                        $errors = $this->lanParcelaModels->errors();
-                        $this->db->transRollback();
-                        session()->setFlashdata('error', 'Falha ao atualizar o lançamento. Tente novamente.');
-                        return redirect()->back();
-                    }
-                    $auditDescription .= "Criada parcela única. ";
-                }
-            }
-        }
-    
-        // Manipula o upload de arquivos
-        $files = $this->request->getFiles();
-        if ($files && isset($files['documentos'])) {
-            $uploadPath = ROOTPATH . 'public/storage/uploads/lancamento/';
-            if (!is_dir($uploadPath)) {
-                mkdir($uploadPath, 0755, true);
-            }
-        
-            foreach ($files['documentos'] as $file) {
-                if ($file->isValid() && !$file->hasMoved()) {
-                    $newName = $file->getRandomName();
-                    $file->move($uploadPath, $newName);
-                
-                    // Prepara os dados para salvar no banco de dados
-                    $dataAnexo = [
-                        'id_lancamento'   => $id,
-                        'nome_arquivo'    => $file->getClientName(),
-                        'caminho_arquivo' => 'storage/uploads/lancamento/' . $newName,
-                        'tipo'            => 1,
-                        'enviado_por'     => session()->get('username'),
-                        'data_envio'      => date('Y-m-d H:i:s')
-                    ];
-                
-                    // Salva o anexo no banco de dados
-                    if (!$this->anexosModel->save($dataAnexo)) {
-                        $errors = $this->anexosModel->errors();
-                        $this->db->transRollback();
-                        session()->setFlashdata('error', 'Falha ao atualizar o lançamento. Tente novamente.');
-                        return redirect()->back();
-                    }
-                
-                    $auditDescription .= "Anexo '{$file->getClientName()}' adicionado. ";
-                }
-            }
-        }
-    
+
         // Atualiza o lançamento com os novos dados
         if (!$this->lancamentosModels->update($id, $dados)) {
-            $errors = $this->lancamentosModels->errors();
             $this->db->transRollback();
             session()->setFlashdata('error', 'Falha ao atualizar o lançamento. Tente novamente.');
             return redirect()->back();
         }
-    
-        // Completa a transação
+
+        $auditDescription .= "Lançamento atualizado com novos dados.";
+
+        // Finaliza a transação
         $this->db->transComplete();
-    
+
         if ($this->db->transStatus() === FALSE) {
             session()->setFlashdata('error', 'Falha ao atualizar o lançamento. Tente novamente.');
             return redirect()->back();
         } else {
-            // Registro único na auditoria, consolidando toda a operação
             $this->audit([
                 'descricao'       => $auditDescription,
-                'usuario'         => session()->get('username'), // Ajuste ao seu sistema de autenticação
+                'usuario'         => session()->get('username'),
                 'ip_user'         => $this->request->getIPAddress(),
                 'acao'            => 'UPDATE',
                 'modulo'          => 'Financeiro',
                 'funcionalidade'  => 'Atualizar Lançamento',
                 'operacao'        => 'Atualizar',
             ]);
-        
+
             session()->setFlashdata('success', "Lançamento: {$id} atualizado com sucesso!");
-            return redirect()->to(base_url('financeiro/financeiroControllers'));
+            return redirect()->to(base_url('financeiro/financeiroControllers/visualizar/' . $id));
         }
     }
 
@@ -1062,7 +924,7 @@ class FinanceiroControllers extends BaseController
         if ($lancamento['is_conferido'] == 1 || $lancamento['is_aprovado'] == 1) {
             $data = [
                 'vl_baixado'   => str_replace(['.', ','], ['', '.'], $valor_baixa),
-                'dt_baixa'     => $data_baixa,
+                'dt_baixa'     => $this->formatarDataParaAmericano($data_baixa),
                 'id_conta'     => $id_conta,
                 'baixado_por'  => $session['username'],
                 'situacao'     => 'B',

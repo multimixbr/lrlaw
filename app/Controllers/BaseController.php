@@ -38,15 +38,13 @@ abstract class BaseController extends Controller
      */
     protected $helpers = [];
 
-    /**
-     * Be sure to declare properties for any property fetch you initialized.
-     * The creation of dynamic property is deprecated in PHP 8.2.
-     */
-    // protected $session;
+    protected function render($view, $data = []): string
+    {
+        $data['content'] = view($view, $data);
 
-    /**
-     * @return void
-     */
+        return view('dashboard/dashboard', $data);
+    }
+
     public function initController(RequestInterface $request, ResponseInterface $response, LoggerInterface $logger)
     {
         // Do Not Edit This Line
@@ -100,5 +98,13 @@ abstract class BaseController extends Controller
         $value = str_replace(',', '.', $value);
 
         return $value;
+    }
+
+    protected function formatarDataParaAmericano($data) {
+        if (!empty($data)) {
+            $dataFormatada = \DateTime::createFromFormat('d/m/Y', $data);
+            return $dataFormatada ? $dataFormatada->format('Y-m-d') : null;
+        }
+        return null;
     }
 }

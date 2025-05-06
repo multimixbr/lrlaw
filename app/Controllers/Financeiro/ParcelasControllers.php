@@ -7,6 +7,7 @@ use App\Models\Pessoas\PessoasModels;
 use App\Models\Financeiro\LancamentosModels;
 use App\Models\Financeiro\LanParcelaModels;
 use App\Models\Financeiro\AnexosModel;
+use App\Models\Juridico\NDIModels;
 use App\Models\UserModel;
 
 class ParcelasControllers extends BaseController
@@ -23,26 +24,24 @@ class ParcelasControllers extends BaseController
         $this->lanParcelaModels = new LanParcelaModels();
         $this->pessoasModel = new PessoasModels();
         $this->anexosModel = new AnexosModel();
-    }
-
-    private function loadDashboardView($viewName, $data = [])
-    {
-        echo view('dashboard/dashboard');
-        return view($viewName, $data);
+        $this->ndiModels = new NDIModels();
     }
 
     public function visualizarParcela($id_parcela)
     {
         $dados['parcela'] = $this->lanParcelaModels->getParcelasByID($id_parcela)[0];
+        if ($dados['parcela']->id_ndi != null) {
+            $dados['parcela']->ndi_assunto = $dados['parcela']->id_ndi . ' - ' . $this->ndiModels->getNDIByID($dados['parcela']->id_ndi)->assunto;
+        }
         $dados['anexos'] = $this->anexosModel->getAnexosParcelasID($id_parcela);
-        return $this->loadDashboardView('financeiro/parcela/visualizarParcela', $dados);
+        return $this->render('financeiro/parcela/visualizarParcela', $dados);
     }
     
     public function editarParcela($id_parcela)
     {
         $dados['parcela'] = $this->lanParcelaModels->getParcelasByID($id_parcela)[0];
         $dados['anexos'] = $this->anexosModel->getAnexosParcelasID($id_parcela);
-        return $this->loadDashboardView('financeiro/parcela/editarParcela', $dados);
+        return $this->render('financeiro/parcela/editarParcela', $dados);
     }
 
     public function conferirParcela()
@@ -324,7 +323,7 @@ class ParcelasControllers extends BaseController
 
         $id_parcela = $this->request->getPost('id_parcela');
         $valor_baixa = $this->request->getPost('valor_baixa');
-        $data_baixa = $this->request->getPost('data_baixa');
+        $data_baixa = $this->formatarDataParaAmericano($this->request->getPost('data_baixa'));
         $banco_baixa = $this->request->getPost('banco_baixa');
 
         // Verifica se os dados necessários foram fornecidos
@@ -353,6 +352,7 @@ class ParcelasControllers extends BaseController
                 'id_conta'      => $banco_baixa,
                 'vl_baixa'      => str_replace(['.', ','], ['', '.'], $valor_baixa),
                 'dt_baixa'      => $data_baixa,
+                'idu_baixa'     => $session['id_usuario'],
                 'baixado_por'   => $session['username'],
                 'status'        => 'baixada',
                 'situacao'      => 'B'
@@ -587,6 +587,8 @@ class ParcelasControllers extends BaseController
             $updateData['observacao'] = $data['complemento'];
             $auditDescription .= "Complemento atualizado para '{$updateData['observacao']}'. ";
         }
+
+        $updateData['dt_vencimento'] = $this->formatarDataParaAmericano($updateData['dt_vencimento']);
 
         // Atualiza a parcela no banco de dados
         if ($this->lanParcelaModels->update($id_parcela, $updateData)) {

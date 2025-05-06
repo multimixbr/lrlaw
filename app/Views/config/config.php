@@ -1,6 +1,3 @@
-<!-- Certifique-se de incluir o link para o Font Awesome em seu cabeçalho -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-
 <style>
     /* Seu código CSS existente */
     body {
@@ -129,7 +126,7 @@
     }
 </style>
 
-<div class="main">
+<div>
     <h2>Configurações</h2>
 
     <div class="card-container">

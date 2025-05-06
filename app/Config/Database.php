@@ -192,22 +192,25 @@ class Database extends Config
         parent::__construct();
 
         if ($_SERVER['SERVER_NAME'] === 'localhost') {
-            $this->default['hostname'] = '';
-            $this->default['username'] = '';
-            $this->default['password'] = '';
-            $this->default['database'] = '';
+            $this->default['hostname'] = 'srv1599.hstgr.io';
+            $this->default['username'] = 'u128015393_dev_lrlaw';
+            $this->default['password'] = 'efvyMTez8v7JMFZ';
+            $this->default['database'] = 'u128015393_dev_lrlaw';
         } else if ($_SERVER['SERVER_NAME'] == 'sis.lrlaw.adv.br'){
-            $this->default['hostname'] = '';
-            $this->default['username'] = '';
-            $this->default['password'] = '';
-            $this->default['database'] = '';
+            $this->default['hostname'] = 'localhost';
+            $this->default['username'] = 'u128015393_LrLaw';
+            $this->default['password'] = 'HFhJuA[U2y';
+            $this->default['database'] = 'u128015393_LrLaw';
         } else {
-            $this->default['hostname'] = '';
-            $this->default['username'] = '';
-            $this->default['password'] = '';
-            $this->default['database'] = '';
+            $this->default['hostname'] = 'srv1599.hstgr.io';
+            $this->default['username'] = 'u128015393_dev_lrlaw';
+            $this->default['password'] = 'efvyMTez8v7JMFZ';
+            $this->default['database'] = 'u128015393_dev_lrlaw';
         }
 
+        // Ensure that we always set the database group to 'tests' if
+        // we are currently running an automated test suite, so that
+        // we don't overwrite live data on accident.
         if (ENVIRONMENT === 'testing') {
             $this->defaultGroup = 'tests';
         }

@@ -1,4 +1,4 @@
-<div class="main">
+<div>
     <div class="container-fluid mt-3">
         <div class="card shadow-sm">
             <div class="card-header bg-secondary text-white">
@@ -79,7 +79,7 @@
                         <!-- Data de Abertura -->
                         <div class="col-md-4">
                             <label for="dt_abertura" class="form-label">Data de Abertura</label>
-                            <input type="date" class="form-control" id="dt_abertura" name="dt_abertura" value="<?= $ndi->dt_abertura ?>" required>
+                            <input type="text" class="form-control datepicker" id="dt_abertura" name="dt_abertura" value="<?= $ndi->dt_abertura ?>" required>
                         </div>
                         <!-- Complexidade -->
                         <div class="col-md-4">
@@ -167,47 +167,79 @@
 
 <script>
    $(document).ready(function () {
-        // Inicializar campos Select2
-        initSelect2();
 
-        // Verifica e carrega os dados existentes para edição
+        $('#processo').mask('0000000-00.0000.0.00.0000');
+
+        $('#id_promovente').change(function () {
+            const isSelected = $(this).val() !== '';
+            $('#id_advogado_autor').prop('disabled', !isSelected);
+            if (!isSelected) {
+                $('#id_advogado_autor').val('').trigger('change');
+            }
+
+            let autor = $(this).val();
+            let reu = $('#id_promovido').val();
+            if (autor && reu && autor === reu) {
+                showCustomAlert('Não é possível cadastrar o mesmo autor e réu!', 'danger');
+                $('#id_promovente').val('').trigger('change');
+            }
+        });
+
+        // Habilitar advogado do réu ao selecionar réu
+        $('#id_promovido').change(function () {
+            const isSelected = $(this).val() !== '';
+            $('#id_advogado_reu').prop('disabled', !isSelected);
+            if (!isSelected) {
+                $('#id_advogado_reu').val('').trigger('change');
+            }
+
+            // VERIFICA SE RÉU E AUTOR SÃO IGUAIS
+            let reu = $(this).val();
+            let autor = $('#id_promovente').val();
+            if (reu && autor && reu === autor) {
+                showCustomAlert('Não é possível cadastrar o mesmo autor e réu!', 'danger');
+                // Limpa o campo de Réu para evitar duplicidade
+                $('#id_promovido').val('').trigger('change');
+            }
+        });
+
+        inicializarSelect2('#uf', 'Selecione o estado.');
+        inicializarSelect2('#cidade', 'Selecione uma cidade.');
+        inicializarSelect2('#id_responsavel', 'Selecione um responsável.');
+        inicializarSelect2('#id_cliente', 'Selecione um cliente.');
+        inicializarSelect2('#id_servico', 'Selecione um serviço.');
+        inicializarSelect2('#id_promovente', 'Selecione um autor.');
+        inicializarSelect2('#id_promovido', 'Selecione um réu.');
+        inicializarSelect2('#id_advogado_autor', 'Selecione um advogado.');
+        inicializarSelect2('#id_advogado_reu', 'Selecione um advogado.');
+
         const ufSelecionada = "<?= $ndi->uf ?>";
         const cidadeSelecionada = "<?= $ndi->cidade ?>";
         const autorSelecionado = "<?= $ndi->id_promovente ?>";
         const advogadoAutorSelecionado = "<?= $ndi->id_advogado_autor ?>";
-        // const escritorioAutor = "<?= $ndi->id_escritorio_autor ?>";
         const reuSelecionado = "<?= $ndi->id_promovido ?>";
         const advogadoReuSelecionado = "<?= $ndi->id_advogado_reu ?>";
-        // const escritorioReu = "<?= $ndi->id_escritorio_reu ?>";
 
-        // Preencher as cidades com base na UF selecionada
         if (ufSelecionada) {
             carregarCidades(ufSelecionada, cidadeSelecionada);
         }
 
-        // Configurar advogado do autor
         if (autorSelecionado) {
             $('#id_advogado_autor').prop('disabled', false);
             if (advogadoAutorSelecionado) {
                 $('#id_advogado_autor').val(advogadoAutorSelecionado).trigger('change');
             }
-            // if (escritorioAutor) {
-            //     $('#id_escritorio_autor').val(escritorioAutor).prop('disabled', false);
-            // }
+
         }
 
-        // Configurar advogado do réu
         if (reuSelecionado) {
             $('#id_advogado_reu').prop('disabled', false);
             if (advogadoReuSelecionado) {
                 $('#id_advogado_reu').val(advogadoReuSelecionado).trigger('change');
             }
-            // if (escritorioReu) {
-            //     $('#id_escritorio_reu').val(escritorioReu).prop('disabled', false);
-            // }
+
         }
 
-        // Evento para alterar cidades ao selecionar UF
         $('#uf').change(function () {
             const estadoUF = $(this).val();
             $('#cidade').empty().append('<option value="">Carregando...</option>');
@@ -218,7 +250,6 @@
             }
         });
 
-        // Evento para habilitar advogado do autor
         $('#id_promovente').change(function () {
             const isSelected = $(this).val() !== '';
             $('#id_advogado_autor').prop('disabled', !isSelected);
@@ -228,12 +259,6 @@
             }
         });
 
-        // Evento para buscar escritório do advogado do autor
-        // $('#id_advogado_autor').change(function () {
-        //     buscarEscritorio($(this).val(), '#id_escritorio_autor');
-        // });
-
-        // Evento para habilitar advogado do réu
         $('#id_promovido').change(function () {
             const isSelected = $(this).val() !== '';
             $('#id_advogado_reu').prop('disabled', !isSelected);
@@ -243,12 +268,10 @@
             }
         });
 
-        // Evento para buscar escritório do advogado do réu
         $('#id_advogado_reu').change(function () {
             buscarEscritorio($(this).val(), '#id_escritorio_reu');
         });
 
-        // Função para carregar cidades com base na UF
         function carregarCidades(uf, cidadeSelecionada = '') {
             $.ajax({
                 url: `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios`,
@@ -266,42 +289,6 @@
             });
         }
 
-        // Função para buscar escritório do advogado
-        // function buscarEscritorio(advogadoId, campoEscritorio) {
-        //     if (advogadoId) {
-        //         $.ajax({
-        //             url: `<?= base_url('juridico/ndiControllers/buscarEscritorio/') ?>${advogadoId}`,
-        //             type: 'GET',
-        //             dataType: 'json',
-        //             success: function (data) {
-        //                 if (data && data.escritorio) {
-        //                     $(campoEscritorio).val(data.escritorio).prop('disabled', false);
-        //                 } else {
-        //                     $(campoEscritorio).val('').prop('disabled', false);
-        //                     alert('Nenhum escritório encontrado para o advogado selecionado.');
-        //                 }
-        //             },
-        //             error: function () {
-        //                 $(campoEscritorio).val('').prop('disabled', false);
-        //                 alert('Erro ao buscar o escritório do advogado. Tente novamente.');
-        //             }
-        //         });
-        //     } else {
-        //         $(campoEscritorio).val('').prop('disabled', true);
-        //     }
-        // }
-
-        // Inicializar campos Select2
-        function initSelect2() {
-            $('#uf, #cidade, #id_responsavel, #id_cliente, #id_servico, #id_promovente, #id_promovido, #id_advogado_autor, #id_advogado_reu').select2({
-                placeholder: function () {
-                    return $(this).attr('placeholder') || 'Selecione uma opção';
-                },
-                language: 'pt-BR',
-                theme: 'bootstrap-5',
-                width: '100%'
-            });
-        }
     });
 
 </script>

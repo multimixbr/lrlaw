@@ -49,7 +49,7 @@
     }
 </style>
 
-<div class="main">
+<div>
     <h2>Gestão de Pessoas</h2>
     <p>Aqui você pode gerenciar as informações dos seus Pessoas.</p>
     

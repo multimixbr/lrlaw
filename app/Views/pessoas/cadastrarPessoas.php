@@ -10,7 +10,7 @@
     }
 </style>
 
-<div class="main">
+<div>
     <div class="container-fluid mt-3">
         <div class="card shadow-sm">
             <div class="card-header bg-secondary text-white">
@@ -48,11 +48,11 @@
                                     <label class="form-check-label" for="tp_cad_for">Fornecedor</label>
                                 </div>
                                 <div class="form-check me-3">
-                                    <input class="form-check-input styled-checkbox" type="checkbox" name="tp_cad_parte" value="1" id="tp_cad_parte">
+                                    <input class="form-check-input styled-checkbox" type="checkbox" name="tp_cad_parte" value="1" id="tp_cad_parte" <?= isset($_GET['tipo']) && $_GET['tipo'] == 'parte' ? 'checked' : '' ?>>
                                     <label class="form-check-label" for="tp_cad_parte">Parte</label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input styled-checkbox" type="checkbox" name="tp_cad_adv" value="1" id="tp_cad_adv">
+                                    <input class="form-check-input styled-checkbox" type="checkbox" name="tp_cad_adv" value="1" id="tp_cad_adv" <?= isset($_GET['tipo']) && $_GET['tipo'] == 'adv' ? 'checked' : '' ?>>
                                     <label class="form-check-label" for="tp_cad_adv">Advogado</label>
                                 </div>
                             </div>
@@ -69,7 +69,7 @@
                         <!-- Telefone 1 -->
                         <div class="col-md-4">
                             <label for="tel_1" class="form-label">Telefone principal:</label>
-                            <input type="text" name="tel_1" id="tel_1" class="form-control" required>
+                            <input type="text" name="tel_1" id="tel_1" class="form-control" >
                         </div>
 
                         <!-- Telefone 2 -->
@@ -83,7 +83,7 @@
                         <!-- Email -->
                         <div class="col-md-6">
                             <label for="email" class="form-label">Email:</label>
-                            <input type="email" name="email" id="email" class="form-control" required>
+                            <input type="email" name="email" id="email" class="form-control" >
                         </div>
 
                         <!-- CEP -->
@@ -164,21 +164,8 @@
 <script>
     $(document).ready(function() {
 
-        $('#estado').select2({
-            placeholder: 'Digite para pesquisar um estado.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
-
-        $('#cidade').select2({
-            placeholder: 'Digite para pesquisar uma cidade.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
+        inicializarSelect2('#estado', 'Selecione um estado.');
+        inicializarSelect2('#cidade', 'Selecione uma cidade.');
 
         $('#estado').change(function () {
             var estadoUF = $(this).val();
@@ -339,7 +326,6 @@
                             $("#rua").val(dados.logradouro);
                             $("#bairro").val(dados.bairro);
                             $("#cidade").val(dados.localidade);
-                            // Atualiza o estado no Select2
                             $("#estado").val(dados.uf).trigger('change');
                         } else {
                             limpa_formulario_cep();
@@ -363,35 +349,37 @@
         }
 
         // Validação de e-mail no front-end
+        $('#btnCadastrarPessoa').on('click', function(event) {
+            event.preventDefault(); // Impede o envio imediato do formulário
+                
+            let formValid = true;
+                
+            // Verificar todos os campos obrigatórios
+            $('#formCadastroPessoa [required]').each(function() {
+                if ($(this).val().trim() === '') {
+                    formValid = false;
+                    let label = $(this).closest('.mb-3').find('label').text();
+                    toastr.error('O campo "' + label + '" é obrigatório.', 'Erro!');
+                }
+            });
+        
+            // Verificar se o e-mail é válido somente se foi preenchido
+            const email = $('#email').val().trim();
+            if (email !== '' && !isValidEmail(email)) {
+                formValid = false;
+                toastr.error('O endereço de e-mail fornecido é inválido.', 'Erro!');
+            }
+        
+            // Se o formulário for válido, submeta-o
+            if (formValid) {
+                $('#formCadastroPessoa').off('submit').submit();
+            }
+        });
+        
+        // Validação de e-mail no front-end
         function isValidEmail(email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return emailRegex.test(email);
         }
-
-        // Validação e submissão do formulário
-        $('#btnCadastrarPessoa').on('click', function() {
-            let formValid = true;
-
-            // Verificar todos os campos obrigatórios
-            $('#formCadastroPessoa [required]').each(function() {
-                if ($(this).val() === '') {
-                    formValid = false;
-                    let label = $(this).closest('.mb-2').find('label').text();
-                    toastr.error('O campo ' + label + ' é obrigatório.', 'Erro!');
-                }
-            });
-
-            // Verificar se o e-mail é válido
-            const email = $('#email').val();
-            if (!isValidEmail(email)) {
-                formValid = false;
-                toastr.error('O endereço de e-mail fornecido é inválido.', 'Erro!');
-            }
-
-            // Se o formulário for válido, submeta-o
-            if (formValid) {
-                $('#formCadastroPessoa').submit();
-            }
-        });
     });
 </script>

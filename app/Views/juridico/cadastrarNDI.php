@@ -21,7 +21,7 @@
     }
 </style>
 
-<div class="main">
+<div>
     <div class="container-fluid mt-3">
         <div class="card shadow-sm">
             <div class="card-header bg-secondary text-white">
@@ -94,7 +94,7 @@
                         <!-- Data de Abertura -->
                         <div class="col-md-4">
                             <label for="dt_abertura" class="form-label">Data de Abertura</label>
-                            <input type="date" class="form-control" id="dt_abertura" name="dt_abertura" required>
+                            <input type="text" class="form-control datepicker" id="dt_abertura" name="dt_abertura" required>
                         </div>
                         <!-- Complexidade -->
                         <div class="col-md-4">
@@ -120,8 +120,15 @@
                     <div class="row mb-3">
                         <!-- Autor -->
                         <div class="col-md-4">
-                            <label for="id_promovente" class="form-label">Autor</label>
-                            <select class="form-control" id="id_promovente" name="id_promovente">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label for="id_promovente" class="form-label">
+                                    Autor
+                                </label>
+                                <a href="#" id="cadastrarParte" class="cadastrarParte" target="_blank" style="font-size: 0.9rem; color: #007bff; text-decoration: none;">
+                                    (Cadastrar novo Autor)
+                                </a>
+                            </div>
+                            <select class="form-control mt-1" id="id_promovente" name="id_promovente">
                                 <option value="">Selecione</option>
                                 <?php foreach ($pessoasParte as $pessoasAutor) : ?>
                                     <option value="<?= $pessoasAutor->id_pessoa ?>"><?= $pessoasAutor->nm_pessoa ?></option>
@@ -130,26 +137,34 @@
                         </div>
                         <!-- Advogado do Autor -->
                         <div class="col-md-4">
-                            <label for="id_advogado_autor" class="form-label">Advogado do Autor</label>
-                            <select class="form-control" id="id_advogado_autor" name="id_advogado_autor" disabled>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label for="id_advogado_autor" class="form-label">
+                                    Advogado do Autor
+                                </label>
+                                <a href="#" id="cadastrarAdv" target="_blank" style="font-size: 0.9rem; color: #007bff; text-decoration: none;">
+                                    (Cadastrar novo Advogado)
+                                </a>
+                            </div>
+                            <select class="form-control mt-1" id="id_advogado_autor" name="id_advogado_autor" disabled>
                                 <option value="">Selecione</option>
                                 <?php foreach ($pessoasAdv as $pessoasAutorAdv) : ?>
                                     <option value="<?= $pessoasAutorAdv->id_pessoa ?>"><?= $pessoasAutorAdv->nm_pessoa ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <!-- Escritório do Advogado do Autor -->
-                        <!-- <div class="col-md-4">
-                            <label for="id_escritorio_autor" class="form-label">Escritório do Advogado do Autor</label>
-                            <input type="text" class="form-control" id="escritorio_autor" name="escritorio_autor" placeholder="Digite o escritório." disabled>
-                            <input type="hidden" id="id_escritorio_autor" name="id_escritorio_autor">
-                        </div> -->
                     </div>
                     <div class="row mb-3">
                         <!-- Réu -->
                         <div class="col-md-4">
-                            <label for="id_promovido" class="form-label">Réu</label>
-                            <select class="form-control" id="id_promovido" name="id_promovido">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label for="id_promovido" class="form-label">
+                                    Réu
+                                </label>
+                                <a href="#" id="cadastrarParte" class="cadastrarParte" target="_blank" style="font-size: 0.9rem; color: #007bff; text-decoration: none;">
+                                    (Cadastrar novo Réu)
+                                </a>
+                            </div>
+                            <select class="form-control mt-1" id="id_promovido" name="id_promovido">
                                 <option value="">Selecione</option>
                                 <?php foreach ($pessoasParte as $pessoasReu) : ?>
                                     <option value="<?= $pessoasReu->id_pessoa ?>"><?= $pessoasReu->nm_pessoa ?></option>
@@ -158,20 +173,21 @@
                         </div>
                         <!-- Advogado do Réu -->
                         <div class="col-md-4">
-                            <label for="id_advogado_reu" class="form-label">Advogado do Réu</label>
-                            <select class="form-control" id="id_advogado_reu" name="id_advogado_reu" disabled>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label for="id_advogado_reu" class="form-label">
+                                    Advogado do Réu
+                                </label>
+                                <a href="#" id="cadastrarAdv" target="_blank" style="font-size: 0.9rem; color: #007bff; text-decoration: none;">
+                                    (Cadastrar novo Advogado)
+                                </a>
+                            </div>
+                            <select class="form-control mt-1" id="id_advogado_reu" name="id_advogado_reu" disabled>
                                 <option value="">Selecione</option>
                                 <?php foreach ($pessoasAdv as $pessoasReuAdv) : ?>
                                     <option value="<?= $pessoasReuAdv->id_pessoa ?>"><?= $pessoasReuAdv->nm_pessoa ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <!-- Escritório do Advogado do Réu -->
-                        <!-- <div class="col-md-4">
-                            <label for="id_escritorio_reu" class="form-label">Escritório do Advogado do Réu</label>
-                            <input type="text" class="form-control" id="escritorio_reu" name="escritorio_reu" placeholder="Digite o escritório." disabled>
-                            <input type="hidden" id="id_escritorio_reu" name="id_escritorio_reu">
-                        </div> -->
                     </div>
 
                     <div class="mb-2 text-end">
@@ -187,160 +203,71 @@
 <script>
     $(document).ready(function() {
 
-        // Habilitar advogado do autor ao selecionar autor
+        function redirecionarCadastro(tipoPessoa) {
+            var baseUrl = "<?= base_url('pessoas/pessoasControllers/novo') ?>";
+
+            window.open(baseUrl + "?tipo=" + encodeURIComponent(tipoPessoa), '_blank');
+        }
+
+        $(".cadastrarParte").on("click", function(e) {
+            e.preventDefault();
+            redirecionarCadastro("parte");
+        });
+
+        $("#cadastrarAdv").on("click", function(e) {
+            e.preventDefault();
+            redirecionarCadastro("adv");
+        });
+
+        $('#processo').mask('0000000-00.0000.0.00.0000');
+
         $('#id_promovente').change(function () {
             const isSelected = $(this).val() !== '';
             $('#id_advogado_autor').prop('disabled', !isSelected);
             if (!isSelected) {
-                $('#id_advogado_autor').val('');
-                $('#id_escritorio_autor').prop('disabled', true).val('');
+                $('#id_advogado_autor').val('').trigger('change');
+            }
+
+            let autor = $(this).val();
+            let reu = $('#id_promovido').val();
+            if (autor && reu && autor === reu) {
+                showCustomAlert('Não é possível cadastrar o mesmo autor e réu!', 'danger');
+                $('#id_promovente').val('').trigger('change');
             }
         });
-
-        // Buscar escritório do autor via AJAX ao selecionar advogado
-        // $('#id_advogado_autor').change(function () {
-        //     const advogadoId = $(this).val();
-        //     if (advogadoId) {
-        //         $.ajax({
-        //             url: `<?= base_url('juridico/ndiControllers/buscarEscritorio/') ?>${advogadoId}`,
-        //             type: 'GET',
-        //             dataType: 'json',
-        //             success: function (data) {
-        //                 if (data && data.escritorio) {
-        //                     $('#id_escritorio_autor').val(data.id_endereco).prop('disabled', false);
-        //                     $('#escritorio_autor').val(data.escritorio).prop('disabled', false);
-        //                 } else {
-        //                     $('#id_escritorio_autor').val('').prop('disabled', false);
-        //                     alert('Nenhum escritório encontrado para o advogado selecionado.');
-        //                 }
-        //             },
-        //             error: function () {
-        //                 $('#id_escritorio_autor').val('').prop('disabled', false);
-        //                 alert('Erro ao buscar o escritório do advogado. Tente novamente.');
-        //             }
-        //         });
-        //     } else {
-        //         $('#id_escritorio_autor').val('').prop('disabled', true);
-        //     }
-        // });
 
         // Habilitar advogado do réu ao selecionar réu
         $('#id_promovido').change(function () {
             const isSelected = $(this).val() !== '';
             $('#id_advogado_reu').prop('disabled', !isSelected);
             if (!isSelected) {
-                $('#id_advogado_reu').val('');
-                $('#id_escritorio_reu').prop('disabled', true).val('');
+                $('#id_advogado_reu').val('').trigger('change');
+            }
+
+            // VERIFICA SE RÉU E AUTOR SÃO IGUAIS
+            let reu = $(this).val();
+            let autor = $('#id_promovente').val();
+            if (reu && autor && reu === autor) {
+                showCustomAlert('Não é possível cadastrar o mesmo autor e réu!', 'danger');
+                // Limpa o campo de Réu para evitar duplicidade
+                $('#id_promovido').val('').trigger('change');
             }
         });
 
-        // Buscar escritório do réu via AJAX ao selecionar advogado
-        // $('#id_advogado_reu').change(function () {
-        //     const advogadoId = $(this).val();
-        //     if (advogadoId) {
-        //         $.ajax({
-        //             url: `<?= base_url('juridico/ndiControllers/buscarEscritorio/') ?>${advogadoId}`,
-        //             type: 'GET',
-        //             dataType: 'json',
-        //             success: function (data) {
+        inicializarSelect2('#uf', 'Selecione o estado.');
+        inicializarSelect2('#cidade', 'Selecione uma cidade.');
+        inicializarSelect2('#id_responsavel', 'Selecione um responsável.');
+        inicializarSelect2('#id_cliente', 'Selecione um cliente.');
+        inicializarSelect2('#id_servico', 'Selecione um serviço.');
+        inicializarSelect2('#id_promovente', 'Selecione um autor.');
+        inicializarSelect2('#id_promovido', 'Selecione um réu.');
+        inicializarSelect2('#id_advogado_autor', 'Selecione um advogado.');
+        inicializarSelect2('#id_advogado_reu', 'Selecione um advogado.');
 
-        //                 if (data && data.escritorio) {
-        //                     $('#id_escritorio_reu').val(data.id_endereco).prop('disabled', false);
-        //                     $('#escritorio_reu').val(data.escritorio).prop('disabled', false);
-        //                 } else {
-        //                     $('#id_escritorio_reu').val('').prop('disabled', false);
-        //                     alert('Nenhum escritório encontrado para o advogado selecionado.');
-        //                 }
-        //             },
-        //             error: function () {
-        //                 $('#id_escritorio_reu').val('').prop('disabled', false);
-        //                 alert('Erro ao buscar o escritório do advogado. Tente novamente.');
-        //             }
-        //         });
-        //     } else {
-        //         $('#id_escritorio_reu').val('').prop('disabled', true);
-        //     }
-        // });
-
-        $('#dt_abertura').on('click focus', function() {
-            this.showPicker(); // Método para abrir o calendário
-        });
-
-        $('#uf').select2({
-            placeholder: 'Selecione o estado.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
-
-        $('#cidade').select2({
-            placeholder: 'selecione uma cidade.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
-
-        $('#id_responsavel').select2({
-            placeholder: 'selecione um responsável.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
-
-        $('#id_cliente').select2({
-            placeholder: 'selecione um cliente.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
-
-        $('#id_servico').select2({
-            placeholder: 'selecione um serviço.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
-
-        $('#id_promovente').select2({
-            placeholder: 'selecione um autor.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
-
-        $('#id_promovido').select2({
-            placeholder: 'selecione um reu.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
-
-        $('#id_advogado_autor').select2({
-            placeholder: 'selecione um advogado.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
-
-        $('#id_advogado_reu').select2({
-            placeholder: 'selecione um advogado.',
-            language: 'pt-BR',
-            minimumInputLength: 0, // Se necessário para AJAX
-            theme: 'bootstrap-5', // Aplica o tema do Bootstrap 5
-            width: '100%' // Garante que use a largura total
-        });
-
+        // Carregar cidades ao selecionar UF (usando API do IBGE)
         $('#uf').change(function () {
             var estadoUF = $(this).val();
-            $('#cidade').empty().append('<option value="">Carregando.</option>');
+            $('#cidade').empty().append('<option value="">Carregando...</option>');
 
             if (estadoUF) {
                 $.ajax({
@@ -361,5 +288,4 @@
             }
         });
     });
-
 </script>

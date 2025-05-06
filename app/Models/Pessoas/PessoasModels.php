@@ -91,7 +91,7 @@ class PessoasModels extends Model
 
     public function getNomePessoaByID($id_pessoa) 
     {
-        $sql = "SELECT nm_pessoa FROM glb_pessoa WHERE is_ativo = 1 AND id_pessoa = {$id_pessoa}";
+        $sql = "SELECT nm_pessoa FROM glb_pessoa WHERE id_pessoa = {$id_pessoa}";
 
         return $this->db->query($sql)->getRow()->nm_pessoa;
     }
@@ -99,6 +99,13 @@ class PessoasModels extends Model
     public function getEnderecoByPessoaID($id_pessoa) 
     {
         $sql = "SELECT * FROM glb_endereco WHERE id_pessoa = {$id_pessoa}";
+
+        return $this->db->query($sql)->getRow();
+    }
+    
+    public function getPessoaByNDI($id_ndi) 
+    {
+        $sql = "SELECT ndi.id_ndi, ndi.id_cliente, gp.nm_pessoa FROM ndi LEFT JOIN glb_pessoa gp ON ndi.id_cliente = gp.id_pessoa WHERE ndi.id_ndi = {$id_ndi}";
 
         return $this->db->query($sql)->getRow();
     }

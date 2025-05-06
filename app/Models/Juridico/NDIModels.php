@@ -25,7 +25,7 @@ class NDIModels extends Model
         return $this->db->query($sql)->getResult();
     }
 
-    public function getVisualizarNDI() 
+    public function getVisualizarNDI($idUser) 
     {
         $sql = "SELECT ndi.*, 
                 gp.nm_pessoa AS cliente, 
@@ -40,7 +40,8 @@ class NDIModels extends Model
                 LEFT JOIN ndi_status ns ON ndi.id_status = ns.id_status
                 LEFT JOIN ndi_servicos nser ON ndi.id_servico = nser.id_servico
                 WHERE ndi.is_ativo = 1
-                AND ndi.situacao = 'A'";
+                AND ndi.situacao = 'A'
+                AND ndi.id_responsavel = {$idUser}";
 
         return $this->db->query($sql)->getResult();
     }
@@ -60,8 +61,7 @@ class NDIModels extends Model
                 LEFT JOIN ndi_fases nf ON ndi.id_fase = nf.id_fase
                 LEFT JOIN ndi_status ns ON ndi.id_status = ns.id_status
                 LEFT JOIN ndi_servicos nser ON ndi.id_servico = nser.id_servico
-                WHERE ndi.is_ativo = 1
-                AND ndi.situacao = 'A'";
+                WHERE ndi.is_ativo = 1";
 
         // Adiciona filtros dinamicamente
         if (!empty($filtros['id_ndi'])) {
@@ -102,6 +102,9 @@ class NDIModels extends Model
 
         if (!empty($filtros['id_servico'])) {
             $sql .= " AND ndi.id_servico = '{$filtros['id_servico']}'";
+        }
+        if (!empty($filtros['situacao'])) {
+            $sql .= " AND ndi.situacao = '{$filtros['situacao']}'";
         }
 
         // Ordenação

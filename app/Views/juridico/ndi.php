@@ -48,7 +48,7 @@
     }
 </style>
 
-<div class="main">
+<div>
     <h2>Bem-vindo ao Sistema Jurídico</h2>
     <p>Aqui você pode gerenciar suas demandas.</p>
     

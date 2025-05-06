@@ -71,7 +71,7 @@ $despesas_trimestres = [
     }
 </style>
 
-<div class="main">
+<div>
     <div class="container-fluid mt-3">
         <div class="card shadow-sm">
             <div class="card-header bg-secondary text-white">

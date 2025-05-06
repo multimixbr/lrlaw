@@ -31,19 +31,9 @@
         text-align: center; /* Centralizar os botões na célula */
     }
 
-    .alert-success {
-        background-color: #28a745;
-        color: white;
-        font-size: 1.2rem;
-        font-weight: bold;
-    }
-
-    .alert-success i {
-        margin-right: 8px;
-    }
 </style>
 
-<div class="main">
+<div>
     <div class="container-fluid mt-3">
         <div class="card shadow-sm">
             <div class="card-header bg-secondary text-white">
@@ -66,7 +56,7 @@
                         </div>
                         <div class="col-md-3">
                             <strong>NDI:</strong>
-                            <p><?= ($parcela->id_ndi == 0 || $parcela->id_ndi == null) ? 'N/A' : htmlspecialchars($parcela->id_ndi) ?></p>
+                            <p><?= ($parcela->id_ndi == 0 || $parcela->id_ndi == null) ? 'N/A' : htmlspecialchars($parcela->ndi_assunto) ?></p>
                         </div>
                     </div>
                 </div>
@@ -82,13 +72,16 @@
                         <!-- Valor da Parcela -->
                         <div class="col-md-4 mb-2">
                             <label for="vl_parcela" class="form-label">Valor da Parcela:</label>
-                            <input type="text" name="vl_parcela" id="vl_parcela" class="form-control readonly-field" value="<?= number_format($parcela->vl_parcela, 2, ',', '.') ?>" readonly>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="text" name="vl_parcela" id="vl_parcela" class="form-control readonly-field" value="<?= number_format($parcela->vl_parcela, 2, ',', '.') ?>" readonly>
+                            </div>
                         </div>
 
                         <!-- Data de Vencimento -->
                         <div class="col-md-4 mb-2">
                             <label for="dt_vencimento" class="form-label">Data de Vencimento:</label>
-                            <input type="date" name="dt_vencimento" id="dt_vencimento" class="form-control readonly-field" value="<?= date('Y-m-d', strtotime($parcela->dt_vencimento)) ?>" readonly>
+                            <input type="text" name="dt_vencimento" id="dt_vencimento" class="form-control readonly-field datepicker" value="<?= date('d/m/Y', strtotime($parcela->dt_vencimento)) ?>" readonly>
                         </div>
                     </div>
 
@@ -127,11 +120,14 @@
                                 <p>Confira e edite os dados da parcela, se necessário:</p>
                                 <div class="form-group">
                                     <label for="valor_conferido">Valor Conferido:</label>
-                                    <input type="text" id="valor_conferido" class="form-control" value="<?= number_format($parcela->vl_parcela, 2, ',', '.') ?>">
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="text" name="valor_conferido" id="valor_conferido" class="form-control" value="<?= number_format($parcela->vl_parcela, 2, ',', '.') ?>">
+                                    </div>
                                 </div>
                                 <div class="form-group mt-3">
                                     <label for="data_vencimento_conferida">Data de Vencimento:</label>
-                                    <input type="date" id="data_vencimento_conferida" class="form-control" value="<?= date('Y-m-d', strtotime($parcela->dt_vencimento)) ?>">
+                                    <input type="text" id="data_vencimento_conferida" class="form-control readonly-field" readonly value="<?= date('d/m/Y', strtotime($parcela->dt_vencimento)) ?>">
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -152,24 +148,27 @@
                             </div>
                             <div class="modal-body">
                                 <div class='row'>
-                                        <div class="col-md-6 mb-2">
-                                            <label for="valor_baixa">Valor da Baixa:</label>
-                                            <input type="text" id="valor_baixa" class="form-control" placeholder="Digite o valor da baixa">
+                                    <div class="col-md-6 mb-2">
+                                        <label for="valor_baixa">Valor da Baixa:</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">R$</span>
+                                            <input type="text" id="valor_baixa" class="form-control" placeholder="Valor da baixa" value="<?= number_format($parcela->vl_parcela, 2, ',', '.') ?>">
                                         </div>
-                                        <div class="col-md-6 mb-2">
-                                            <label for="banco_baixa">Conta baixada:</label>
-                                            <select name="id_conta" id="id_conta" class="form-control" required>
-                                                <option value="">----Selecione----</option>
-                                                <option value="1">Banco Inter</option>
-                                                <option value="2">Banco Nubank</option>
-                                            </select>
-                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label for="banco_baixa">Conta baixada:</label>
+                                        <select name="id_conta" id="id_conta" class="form-control" required>
+                                            <option value="">----Selecione----</option>
+                                            <option value="1">Banco Inter</option>
+                                            <option value="2">Banco Nubank</option>
+                                        </select>
+                                    </div>
                                 </div>
                                 <div class='row'>
                                     <div class="col-md-12 mb-2">
                                         <div class="form-group mt-3">
                                             <label for="data_baixa">Data da Baixa:</label>
-                                            <input type="date" id="data_baixa" class="form-control" max="">
+                                            <input type="text" id="data_baixa" class="form-control" max="">
                                         </div>
                                     </div>
                                 </div>
@@ -182,40 +181,42 @@
                     </div>
                 </div>
 
-                <!-- Adicionar Anexos -->
-                <div class="card mt-4">
+                <!-- Card: Documentos / Anexos -->
+                <div class="card shadow-sm mb-4">
                     <div class="card-header bg-secondary text-white">
-                        <h3 class="mb-0">Adicionar Anexos</h3>
+                        <h4 class="mb-0">Documentos / Anexos</h4>
                     </div>
                     <div class="card-body">
-                        <form method="post" action="<?= base_url('financeiro/parcelasControllers/uploadAnexo/') . $parcela->id_parcela ?>" enctype="multipart/form-data">
+                        <!-- Form de Upload de Anexos -->
+                        <form method="post" 
+                              action="<?= base_url('financeiro/parcelasControllers/uploadAnexo/') . $parcela->id_parcela ?>"
+                              enctype="multipart/form-data" class="mb-3">
                             <div class="mb-3">
-                                <label for="anexo" class="form-label">Selecione o arquivo</label>
-                                <input type="file" class="form-control" name="anexo[]" id="anexo" multiple>
+                                <label for="documentos" class="form-label">Selecione o(s) arquivo(s)</label>
+                                <input type="file" class="form-control" name="documentos[]" id="documentos" multiple>
                             </div>
-                            <button type="submit" class="btn btn-primary">Enviar Arquivo</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Enviar Arquivo(s)
+                            </button>
                         </form>
+                                    
+                        <!-- Lista de Anexos -->
+                        <?php if (!empty($anexos)) : ?>
+                            <ul class="list-group">
+                                <?php foreach ($anexos as $anexo) : ?>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        <?= htmlspecialchars($anexo->nome_arquivo) ?>
+                                        <a href="<?= base_url($anexo->caminho_arquivo) ?>" class="btn btn-sm btn-primary" target="_blank">
+                                            <i class="fas fa-eye"></i> Visualizar
+                                        </a>
+                                    </li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php else : ?>
+                            <div class="text-muted">Nenhum anexo disponível para este lançamento.</div>
+                        <?php endif; ?>
                     </div>
                 </div>
-
-                <!-- Exibir anexos -->
-                <?php if (!empty($anexos)) : ?>
-                <div class="card mt-4">
-                    <div class="card-header bg-secondary text-white">
-                        <h3 class="mb-0">Anexos</h3>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-group">
-                            <?php foreach ($anexos as $anexo) : ?>
-                            <li class="list-group-item d-flex justify-content-between align-items-center">
-                                <?= $anexo->nome_arquivo ?>
-                                <a href="<?= base_url($anexo->caminho_arquivo) ?>" class="btn btn-sm btn-primary" target="_blank">Visualizar</a>
-                            </li>
-                            <?php endforeach; ?>
-                        </ul>
-                    </div>
-                </div>
-                <?php endif; ?>
             </div>
         </div>
     </div>
@@ -223,6 +224,27 @@
 
 <script>
     $(document).ready(function() {
+
+        $('#data_baixa').datepicker({
+            dateFormat: 'dd/mm/yy',
+            maxDate: today,
+            showAnim: 'slideDown',
+            changeMonth: true,
+            changeYear: true,
+            yearRange: '1900:2100',
+        });
+
+        $('#data_baixa').mask('00/00/0000', { placeholder: 'dd/mm/yyyy' });
+
+        $('#data_baixa').on('blur', function () {
+            const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+            const valor = $('#data_baixa').val();
+                
+            if (!regex.test(valor) && valor !== '') {
+                showCustomAlert('Por favor, insira uma data válida no formato dd/mm/yyyy.', 'danger');
+                $('#data_baixa').val(''); 
+            }
+        });
 
         // Obtém os valores do lançamento diretamente do PHP
         let isAprovado = <?= $parcela->is_aprovado ? 'true' : 'false' ?>;
@@ -267,17 +289,6 @@
         $('#vl_parcela').mask('#.##0,00', {
             reverse: true
         });
-
-        $('#data_vencimento_conferida').on('click focus', function() {
-            this.showPicker(); // Método para abrir o calendário
-        });
-
-        $('#data_baixa').on('click focus', function() {
-            this.showPicker(); // Método para abrir o calendário
-        });
-
-        // Definir o valor máximo do campo de data como a data de hoje
-        $('#data_baixa').attr('max', today);
 
         let valorConferido = "<?= number_format($parcela->vl_parcela, 2, ',', '.') ?>";
         let dataVencimentoConferida = "<?= date('Y-m-d', strtotime($parcela->dt_vencimento)) ?>";

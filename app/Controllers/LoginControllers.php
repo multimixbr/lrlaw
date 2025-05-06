@@ -32,6 +32,7 @@ class LoginControllers extends BaseController
                     'username' => $user['username'],
                     'isLoggedIn' => true
                 ]);
+                $session->setFlashdata('success', 'Usuário autenticado.');
                 return redirect()->to('home');
             } else {
                 $session->setFlashdata('error', 'Senha incorreta.');

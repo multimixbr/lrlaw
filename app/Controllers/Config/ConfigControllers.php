@@ -21,29 +21,23 @@ class ConfigControllers extends BaseController
         $this->anexosModel = new AnexosModel();
     }
 
-    private function loadDashboardView($viewName, $data = [])
-    {
-        echo view('dashboard/dashboard');
-        return view($viewName, $data);
-    }
-
     public function index(): string
     {
-        return $this->loadDashboardView('config/config');
+        return $this->render('config/config');
     }
 
     public function alterarSenha()
     {
         $session = session();
         $userModel = new UserModel();
-
+    
         $userId = $session->get('id_usuario'); // Certifique-se de que o ID do usuário está na sessão
-        $currentPassword = $this->request->getPost('current_password');
-        $newPassword = $this->request->getPost('new_password');
-        $confirmPassword = $this->request->getPost('confirm_password');
-
+        $senhaAtual = $this->request->getPost('senhaAtual');
+        $novaSenha = $this->request->getPost('novaSenha');
+        $confirmarSenha = $this->request->getPost('confirmarSenha');
+    
         // Verifica se a nova senha e a confirmação coincidem
-        if ($newPassword !== $confirmPassword) {
+        if ($novaSenha !== $confirmarSenha) {
             // Registro de auditoria para tentativa com senhas incompatíveis
             $this->audit([
                 'descricao'       => "Tentativa de alterar senha com confirmação incompatível para usuário ID: $userId.",
@@ -54,11 +48,12 @@ class ConfigControllers extends BaseController
                 'funcionalidade'  => 'Alterar Senha',
                 'operacao'        => 'Erro',
             ]);
-
-            $session->setFlashdata('error', 'Nova senha e confirmação não coincidem.');
-            return redirect()->back();
+            return $this->response->setJSON([
+                'status'    => 'error',
+                'mensagem'  => 'Nova senha e confirmação não coincidem.'
+            ]);
         }
-
+    
         // Busca o usuário no banco de dados
         $user = $userModel->find($userId);
         if (!$user) {
@@ -72,13 +67,14 @@ class ConfigControllers extends BaseController
                 'funcionalidade'  => 'Alterar Senha',
                 'operacao'        => 'Erro',
             ]);
-
-            $session->setFlashdata('error', 'Usuário não encontrado.');
-            return redirect()->back();
+            return $this->response->setJSON([
+                'status'    => 'error',
+                'mensagem'  => 'Usuário não encontrado.'
+            ]);
         }
-
+    
         // Verifica se a senha atual está correta
-        if (md5($currentPassword) !== $user['senha']) {
+        if (md5($senhaAtual) !== $user['senha']) {
             // Registro de auditoria para senha atual incorreta
             $this->audit([
                 'descricao'       => "Tentativa de alterar senha com senha atual incorreta para usuário ID: $userId.",
@@ -89,15 +85,16 @@ class ConfigControllers extends BaseController
                 'funcionalidade'  => 'Alterar Senha',
                 'operacao'        => 'Erro',
             ]);
-
-            $session->setFlashdata('error', 'Senha atual incorreta.');
-            return redirect()->back();
+            return $this->response->setJSON([
+                'status'    => 'error',
+                'mensagem'  => 'Senha atual incorreta.'
+            ]);
         }
-
+    
         // Atualiza a senha no banco de dados
-        $newPasswordHash = md5($newPassword);
+        $newPasswordHash = md5($novaSenha);
         $userModel->update($userId, ['senha' => $newPasswordHash]);
-
+    
         // Registro de auditoria para alteração bem-sucedida
         $this->audit([
             'descricao'       => "Senha alterada com sucesso para usuário ID: $userId.",
@@ -108,10 +105,11 @@ class ConfigControllers extends BaseController
             'funcionalidade'  => 'Alterar Senha',
             'operacao'        => 'Atualizar',
         ]);
-
-        // Define uma mensagem de sucesso e redireciona
-        $session->setFlashdata('success', 'Senha alterada com sucesso.');
-        return redirect()->to(base_url('config/configControllers')); // Redireciona para a base_url
+    
+        return $this->response->setJSON([
+            'status'    => 'ok',
+            'mensagem'  => 'Senha alterada com sucesso!'
+        ]);
     }
 
     // public function permissao()
@@ -139,7 +137,7 @@ class ConfigControllers extends BaseController
     //     }
 
     //     // Carrega a visão caso não seja uma requisição POST
-    //     return $this->loadDashboardView('config/permissao');
+    //     return $this->render('config/permissao');
     // }
 
     public function cadastrarUser()
